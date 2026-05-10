@@ -17,7 +17,8 @@
     "node": ">=20.0.0"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "clear": "node prisma/clear.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
