@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
   Star, XCircle, ChevronRight, Sparkles,
-  Navigation, CheckCircle2, History
+  Navigation, CheckCircle2, History, CheckCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -87,11 +87,11 @@ export function BookingsPage() {
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          userId: user?.id, 
-          resortId, 
-          rating: reviewData.rating, 
-          comment: reviewData.comment 
+        body: JSON.stringify({
+          userId: user?.id,
+          resortId,
+          rating: reviewData.rating,
+          comment: reviewData.comment
         }),
       });
       if (response.ok) {
@@ -107,7 +107,7 @@ export function BookingsPage() {
   const handleDownloadInvoice = async (booking: Booking) => {
     const doc = new jsPDF();
     const safeRef = booking.referenceNumber || "HS-STAY";
-    
+
     // Brand Colors
     const navy: [number, number, number] = [10, 15, 30];
     const gold: [number, number, number] = [184, 134, 11];
@@ -122,7 +122,7 @@ export function BookingsPage() {
     doc.setFont("serif", "bold");
     doc.setFontSize(26);
     doc.text("HAMPISTAYS", 20, 30);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(200, 200, 200);
@@ -141,7 +141,7 @@ export function BookingsPage() {
     doc.setFontSize(14);
     doc.setFont("serif", "bold");
     doc.text("GUEST INFORMATION", 20, 70);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`Primary Guest: ${user?.name}`, 20, 78);
@@ -151,7 +151,7 @@ export function BookingsPage() {
     doc.setFontSize(14);
     doc.setFont("serif", "bold");
     doc.text("STAY DETAILS", 110, 70);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.text(`Resort: ${booking.resort?.name}`, 110, 78);
@@ -195,8 +195,8 @@ export function BookingsPage() {
       {/* Cinematic Hero Section */}
       <section className="relative h-[35vh] flex items-center mb-12 overflow-hidden bg-navy-950">
         <div className="absolute inset-0 opacity-40">
-          <img 
-            src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000" 
+          <img
+            src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000"
             className="w-full h-full object-cover"
             alt="Hampi landscape"
           />
@@ -227,13 +227,13 @@ export function BookingsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-sand-100 shadow-sm w-fit">
             {(["upcoming", "completed", "cancelled"] as const).map(tab => (
-              <button 
-                key={tab} 
+              <button
+                key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={cn(
                   "px-8 py-3 rounded-xl text-sm font-bold capitalize transition-all flex items-center gap-2",
-                  activeTab === tab 
-                    ? "bg-navy-950 text-white shadow-xl scale-105" 
+                  activeTab === tab
+                    ? "bg-navy-950 text-white shadow-xl scale-105"
                     : "text-navy-950/40 hover:text-navy-950"
                 )}
               >
@@ -266,29 +266,29 @@ export function BookingsPage() {
         ) : displayBookings.length > 0 ? (
           <div className="grid grid-cols-1 gap-8">
             {displayBookings.map((booking, i) => (
-              <motion.div 
-                key={booking.id} 
-                initial={{ opacity: 0, y: 20 }} 
+              <motion.div
+                key={booking.id}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 className="group relative bg-white rounded-[3rem] border border-sand-100 overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500 flex flex-col lg:flex-row"
               >
                 {/* Photo Section */}
                 <div className="w-full lg:w-96 h-64 lg:h-auto overflow-hidden shrink-0 relative">
-                  <img 
-                    src={booking.resort?.images?.[0] || 'https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1000'} 
-                    alt={booking.resort?.name} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                  <img
+                    src={booking.resort?.images?.[0] || 'https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=1000'}
+                    alt={booking.resort?.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent opacity-60" />
-                  
+
                   {/* Status Badge Over Image */}
                   <div className="absolute top-6 left-6">
                     <span className={cn(
                       "px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-full backdrop-blur-md border border-white/20 text-white",
                       booking.status === "CONFIRMED" ? "bg-emerald-500/80" :
-                      booking.status === "CANCELLED" ? "bg-red-500/80" :
-                      "bg-gold-500/80"
+                        booking.status === "CANCELLED" ? "bg-red-500/80" :
+                          "bg-gold-500/80"
                     )}>
                       {booking.status}
                     </span>
@@ -358,10 +358,10 @@ export function BookingsPage() {
                       <Button variant="outline" className="px-6 rounded-2xl gap-2 border-sand-200 hover:bg-sand-50" onClick={() => handleDownloadInvoice(booking)}>
                         <Download className="w-4 h-4" /> Get Invoice
                       </Button>
-                      
+
                       {activeTab === "upcoming" && (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="px-6 rounded-2xl gap-2 border-red-100 text-red-600 bg-red-50/30 hover:bg-red-50 hover:border-red-200"
                           isLoading={cancellingId === booking.id}
                           onClick={() => handleCancel(booking.id)}
@@ -371,7 +371,7 @@ export function BookingsPage() {
                       )}
 
                       {activeTab === "completed" && (
-                        <Button 
+                        <Button
                           className="px-8 rounded-2xl gap-2 bg-gold-500 text-navy-950 shadow-gold"
                           onClick={() => setShowReview(booking.resortId)}
                         >
@@ -397,8 +397,8 @@ export function BookingsPage() {
             </div>
             <h2 className="text-3xl font-serif font-bold text-navy-950 mb-4">Your journey map is empty</h2>
             <p className="text-navy-950/60 mb-12 text-lg max-w-md mx-auto">
-              {activeTab === "upcoming" 
-                ? "No upcoming escapes found. Every ruins visit begins with a single booking." 
+              {activeTab === "upcoming"
+                ? "No upcoming escapes found. Every ruins visit begins with a single booking."
                 : "Your past travels will be preserved here as memories."}
             </p>
             {activeTab === "upcoming" && (
@@ -414,21 +414,21 @@ export function BookingsPage() {
       <AnimatePresence>
         {showReview && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-navy-950/60 backdrop-blur-md" 
-              onClick={() => setShowReview(null)} 
+              className="absolute inset-0 bg-navy-950/60 backdrop-blur-md"
+              onClick={() => setShowReview(null)}
             />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative bg-white rounded-[3.5rem] p-10 md:p-14 max-w-xl w-full shadow-2xl border border-white/10 overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600" />
-              
+
               <div className="text-center mb-10">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gold-50 rounded-2xl mb-6">
                   <Star className="w-8 h-8 text-gold-500 fill-current" />
@@ -438,19 +438,19 @@ export function BookingsPage() {
               </div>
 
               <div className="flex justify-center gap-4 mb-10">
-                {[1,2,3,4,5].map(star => (
-                  <button 
-                    key={star} 
-                    onClick={() => setReviewData(p => ({...p, rating: star}))}
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewData(p => ({ ...p, rating: star }))}
                     className="group"
                   >
-                    <Star 
+                    <Star
                       className={cn(
-                        "w-12 h-12 transition-all duration-300", 
-                        reviewData.rating >= star 
-                          ? "fill-gold-400 text-gold-400 scale-125 filter drop-shadow-gold" 
+                        "w-12 h-12 transition-all duration-300",
+                        reviewData.rating >= star
+                          ? "fill-gold-400 text-gold-400 scale-125 filter drop-shadow-gold"
                           : "text-sand-200 group-hover:text-gold-200"
-                      )} 
+                      )}
                     />
                   </button>
                 ))}
@@ -462,7 +462,7 @@ export function BookingsPage() {
                   rows={4}
                   placeholder="Tell us about the service, the ruins, and your stay..."
                   value={reviewData.comment}
-                  onChange={e => setReviewData(p => ({...p, comment: e.target.value}))}
+                  onChange={e => setReviewData(p => ({ ...p, comment: e.target.value }))}
                   className="w-full p-6 rounded-[2rem] border border-sand-200 bg-sand-50/50 text-base resize-none outline-none focus:ring-4 focus:ring-gold-500/10 focus:border-gold-400 transition-all"
                 />
               </div>
