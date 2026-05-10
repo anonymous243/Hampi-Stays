@@ -82,11 +82,12 @@ export function CheckoutPage() {
     setIsProcessing(true);
     try {
       // 1. Initialize Cashfree
-      if (!window.Cashfree) {
-        throw new Error("Payment system (Cashfree) failed to load. Please refresh the page.");
+      const cfWindow = window as any;
+      if (!cfWindow.Cashfree) {
+        throw new Error("Payment system (Cashfree) failed to load. Please refresh the page or check your connection.");
       }
 
-      const cashfree = window.Cashfree({
+      const cashfree = cfWindow.Cashfree({
         mode: "sandbox", // Use "production" for real payments
       });
 
