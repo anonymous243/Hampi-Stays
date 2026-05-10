@@ -8,9 +8,13 @@
     "server": "node server/index.js",
     "build": "tsc -b && vite build",
     "start": "node server/index.js",
+    "deploy": "npx prisma migrate deploy && node server/index.js",
     "postinstall": "prisma generate",
     "lint": "eslint .",
     "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

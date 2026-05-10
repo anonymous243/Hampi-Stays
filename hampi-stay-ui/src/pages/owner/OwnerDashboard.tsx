@@ -212,7 +212,7 @@ Verified by HampiStays Partner Network.
         ? `/api/bookings/${bookingId}/${action}`
         : `/api/bookings/${bookingId}/status`;
       
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
+      const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: action === 'checkin' || action === 'checkout' ? JSON.stringify({ status: action === 'checkin' ? 'CHECKED_IN' : 'COMPLETED' }) : undefined
