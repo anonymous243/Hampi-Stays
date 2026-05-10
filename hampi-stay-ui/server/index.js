@@ -1910,7 +1910,7 @@ app.post('/api/auth/staff/accept', async (req, res) => {
 });
 
 // Catch-all route to serve the frontend index.html for any non-API routes
-app.get('*', (req, res) => {
+app.get(/(.*)/, (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
