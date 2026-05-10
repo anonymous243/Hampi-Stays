@@ -14,6 +14,15 @@ async function main() {
   await prisma.resort.deleteMany();
   await prisma.resortOwner.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.systemSettings.deleteMany();
+
+  // 0.5 Initialize System Settings
+  await prisma.systemSettings.create({
+    data: {
+      guideServiceEnabled: true,
+    }
+  });
+  console.log('✅ Initialized system settings');
 
   // 1. Create a Luxury Owner Account
   const salt = await bcrypt.genSalt(12);
