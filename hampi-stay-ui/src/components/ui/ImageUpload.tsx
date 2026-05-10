@@ -28,7 +28,7 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
     formData.append("image", file);
 
     try {
-      const response = await fetch("http://localhost:5000/api/upload", {
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -95,3 +95,4 @@ export function ImageUpload({ onUploadSuccess, label, className }: ImageUploadPr
     </div>
   );
 }
+

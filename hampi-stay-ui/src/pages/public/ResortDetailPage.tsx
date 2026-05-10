@@ -40,7 +40,7 @@ export function ResortDetailPage() {
       if (!slug) return;
       try {
         setIsLoading(true);
-        const response = await fetch(`http://localhost:5000/api/resorts/${slug}`);
+        const response = await fetch(`/api/resorts/${slug}`);
         if (!response.ok) throw new Error('Resort not found');
         const data = await response.json();
 
@@ -363,3 +363,4 @@ export function ResortDetailPage() {
     </div>
   );
 }
+

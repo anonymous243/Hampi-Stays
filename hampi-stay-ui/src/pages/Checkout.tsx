@@ -74,7 +74,7 @@ export function Checkout() {
     
     try {
       // 1. Create Booking & Get Payment Session
-      const response = await fetch("http://localhost:5000/api/bookings", {
+      const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,7 +115,7 @@ export function Checkout() {
         }
 
         // 3. Verify Payment with Backend
-        const verifyRes = await fetch(`http://localhost:5000/api/bookings/${data.referenceNumber}/verify-payment`, {
+        const verifyRes = await fetch(`/api/bookings/${data.referenceNumber}/verify-payment`, {
           method: "POST"
         });
 
@@ -416,3 +416,4 @@ export function Checkout() {
     </div>
   );
 }
+

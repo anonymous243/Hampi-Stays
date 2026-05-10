@@ -10,7 +10,7 @@ export function Experiences() {
   useEffect(() => {
     const fetchExperiences = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/experiences');
+        const res = await fetch('/api/experiences');
         if (!res.ok) throw new Error('API request failed');
         const data = await res.json();
         
@@ -162,3 +162,4 @@ export function Experiences() {
     </section>
   );
 }
+

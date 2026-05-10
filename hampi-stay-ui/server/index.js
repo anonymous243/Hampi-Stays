@@ -10,11 +10,16 @@ import cloudinary from 'cloudinary';
 import multer from 'multer';
 import streamifier from 'streamifier';
 import { Cashfree, CFEnvironment } from 'cashfree-pg';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 
 dotenv.config();
 
 const prisma = new PrismaClient();
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'hampi_luxury_secret_key_2026';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -148,7 +153,11 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 // Root Welcome Route
-app.get('/', (req, res) => {
+// We will serve the static files from the dist directory in production
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+app.get('/api/welcome', (req, res) => {
   res.send(`
     <div style="font-family: serif; text-align: center; padding: 50px; background: #fafaf9; color: #0c0a09; height: 100vh;">
       <h1 style="color: #d97706; font-style: italic;">HampiStays Luxury API</h1>
@@ -431,7 +440,7 @@ app.post('/api/bookings', async (req, res) => {
           customer_phone: phone || "9999999999"
         },
         order_meta: {
-          return_url: `http://localhost:5173/checkout/success?order_id=${referenceNumber}`
+          return_url: `${process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`}/checkout/success?order_id=${referenceNumber}`
         }
       };
 
@@ -1898,6 +1907,11 @@ app.post('/api/auth/staff/accept', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+// Catch-all route to serve the frontend index.html for any non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(PORT, () => {

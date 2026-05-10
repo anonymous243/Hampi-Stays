@@ -42,7 +42,7 @@ export function LocalExpertsPage() {
 
   const fetchGuides = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/guides');
+      const res = await fetch('/api/guides');
       if (!res.ok) throw new Error('API request failed');
       const data = await res.json();
       setGuides(Array.isArray(data) ? data : []);
@@ -67,7 +67,7 @@ export function LocalExpertsPage() {
     setIsBooking(true);
     try {
       const totalPrice = selectedGuide.pricePerDay * (bookingHours / 8);
-      const res = await fetch(`http://localhost:5000/api/guides/${selectedGuide.id}/book`, {
+      const res = await fetch(`/api/guides/${selectedGuide.id}/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

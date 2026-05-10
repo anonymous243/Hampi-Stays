@@ -26,7 +26,7 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
     const fetchResorts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:5000/api/resorts');
+        const response = await fetch('/api/resorts');
         if (!response.ok) throw new Error('Failed to fetch resorts');
         const data = await response.json();
         
@@ -126,3 +126,4 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
     maxPrice: MAX_PRICE,
   };
 }
+

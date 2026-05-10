@@ -26,6 +26,7 @@ import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 
 // Role-based Pages
 import { CheckoutPage } from "./pages/traveler/CheckoutPage";
+import { CheckoutSuccessPage } from "./pages/traveler/CheckoutSuccessPage";
 import { BookingConfirmationPage } from "./pages/traveler/BookingConfirmationPage";
 import { BookingsPage } from "./pages/traveler/BookingsPage";
 import { WishlistPage } from "./pages/traveler/WishlistPage";
@@ -111,6 +112,14 @@ function AnimatedRoutes() {
               element={
                 <ProtectedRoute>
                   <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout/success"
+              element={
+                <ProtectedRoute>
+                  <CheckoutSuccessPage />
                 </ProtectedRoute>
               }
             />

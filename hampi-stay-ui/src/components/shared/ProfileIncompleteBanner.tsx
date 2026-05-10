@@ -37,7 +37,7 @@ export function ProfileIncompleteBanner() {
     
     // Async check for Guides
     if (user.role === 'GUIDE' && !isIncomplete) {
-      fetch(`http://localhost:5000/api/guides/profile/${user.id}`)
+      fetch(`/api/guides/profile/${user.id}`)
         .then(res => res.json())
         .then(data => {
           if (!data || data.status !== 'APPROVED') setIsVisible(true);
@@ -106,3 +106,4 @@ export function ProfileIncompleteBanner() {
     </AnimatePresence>
   );
 }
+

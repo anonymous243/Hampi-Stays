@@ -16,7 +16,7 @@ export function WishlistPage() {
     const fetchWishlist = async () => {
       if (!user) return;
       try {
-        const response = await fetch(`http://localhost:5000/api/users/${user.id}/wishlist`);
+        const response = await fetch(`/api/users/${user.id}/wishlist`);
         if (response.ok) {
           const data = await response.json();
           setWishlist(data);
@@ -32,7 +32,7 @@ export function WishlistPage() {
 
   const toggleWishlist = async (resortId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/toggle`, {
+      const response = await fetch(`/api/wishlist/toggle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user?.id, resortId })
@@ -121,3 +121,4 @@ export function WishlistPage() {
     </div>
   );
 }
+

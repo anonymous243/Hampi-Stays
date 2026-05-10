@@ -67,7 +67,7 @@ export function GuideDashboard() {
   const fetchProfile = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/guides/profile/${user.id}`);
+      const res = await fetch(`/api/guides/profile/${user.id}`);
       const data = await res.json();
       setProfile(data);
       if (data) {
@@ -95,7 +95,7 @@ export function GuideDashboard() {
   const fetchSystemStatus = async () => {
     try {
       console.log("Fetching system status for guide dashboard...");
-      const res = await fetch("http://localhost:5000/api/settings");
+      const res = await fetch("/api/settings");
       const data = await res.json();
       console.log("System status received:", data);
       setGuideServiceEnabled(data.guideServiceEnabled);
@@ -106,7 +106,7 @@ export function GuideDashboard() {
 
   const fetchBookings = async (profileId: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/guides/${profileId}/bookings`);
+      const res = await fetch(`/api/guides/${profileId}/bookings`);
       const data = await res.json();
       setBookings(data);
     } catch (err) {
@@ -118,7 +118,7 @@ export function GuideDashboard() {
     if (!user) return;
     setIsSavingProfile(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/guides/profile/${user.id}`, {
+      const res = await fetch(`/api/guides/profile/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileForm)
@@ -137,7 +137,7 @@ export function GuideDashboard() {
 
   const handleBookingStatus = async (bookingId: string, status: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/guide-bookings/${bookingId}/status`, {
+      const res = await fetch(`/api/guide-bookings/${bookingId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -153,7 +153,7 @@ export function GuideDashboard() {
   const handleCreateExperience = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:5000/api/guides/${profile.id}/experiences`, {
+      const res = await fetch(`/api/guides/${profile.id}/experiences`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...newExp, images: newExp.imageUrl ? [newExp.imageUrl] : [] })
@@ -179,7 +179,7 @@ export function GuideDashboard() {
   const handleDeleteExperience = async (id: string) => {
     if (!confirm("Are you sure you want to delete this experience?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/experiences/${id}`, {
+      const res = await fetch(`/api/experiences/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) fetchProfile();
@@ -422,7 +422,7 @@ export function GuideDashboard() {
                           const fd = new FormData();
                           fd.append('image', file);
                           try {
-                            const r = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: fd });
+                            const r = await fetch('/api/upload', { method: 'POST', body: fd });
                             const d = await r.json();
                             if (d.url) setNewExp(prev => ({ ...prev, imageUrl: d.url }));
                           } catch (err) { console.error("Image upload failed", err); }
@@ -546,10 +546,10 @@ export function GuideDashboard() {
                     const fd = new FormData();
                     fd.append('image', file);
                     try {
-                      const r = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: fd });
+                      const r = await fetch('/api/upload', { method: 'POST', body: fd });
                       const d = await r.json();
                       if (d.url) {
-                        await fetch(`http://localhost:5000/api/experiences/${exp.id}`, {
+                        await fetch(`/api/experiences/${exp.id}`, {
                           method: 'PATCH',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ images: [d.url] })
@@ -627,12 +627,12 @@ export function GuideDashboard() {
                     formData.append('image', file);
                     try {
                       // 1. Upload to Cloudinary
-                      const uploadRes = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: formData });
+                      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
                       const uploadData = await uploadRes.json();
                       if (!uploadData.url) throw new Error('Upload failed');
 
                       // 2. Save avatar URL immediately to the User record
-                      const patchRes = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+                      const patchRes = await fetch(`/api/users/${user.id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ avatar: uploadData.url }),
@@ -882,7 +882,7 @@ export function GuideDashboard() {
                     const formData = new FormData();
                     formData.append('image', file);
                     try {
-                      const res = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: formData });
+                      const res = await fetch('/api/upload', { method: 'POST', body: formData });
                       const data = await res.json();
                       if (data.url) setProfileForm({...profileForm, idImage: data.url});
                     } catch (err) { console.error("Upload failed", err); }

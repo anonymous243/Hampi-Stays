@@ -47,7 +47,7 @@ export function OwnerDashboard() {
   const fetchResorts = async () => {
     if (!user) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/owners/${user.id}/resorts`);
+      const response = await fetch(`/api/owners/${user.id}/resorts`);
       const data = await response.json();
       setResorts(data);
     } catch (error) {
@@ -82,7 +82,7 @@ export function OwnerDashboard() {
     if (!resort) return;
     setIsLoadingAddingRoom(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/resorts/${resort.id}/rooms`, {
+      const response = await fetch(`/api/resorts/${resort.id}/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -106,7 +106,7 @@ export function OwnerDashboard() {
 
   const handleDeletePhoto = async (resortId: string, photoUrl: string) => {
     try {
-      await fetch(`http://localhost:5000/api/resorts/${resortId}/photos`, {
+      await fetch(`/api/resorts/${resortId}/photos`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: photoUrl })
@@ -232,7 +232,7 @@ Verified by HampiStays Partner Network.
     if (!newMessage.trim() || !activeMessageBooking) return;
     
     try {
-      const response = await fetch("http://localhost:5000/api/messages", {
+      const response = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -256,7 +256,7 @@ Verified by HampiStays Partner Network.
     if (activeTab === 'inbox' && activeMessageBooking) {
       const fetchMessages = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/messages/${activeMessageBooking.id}`);
+          const res = await fetch(`/api/messages/${activeMessageBooking.id}`);
           if (res.ok) setMessages(await res.json());
         } catch (err) {
           console.error("Poll failed", err);
@@ -386,7 +386,7 @@ Verified by HampiStays Partner Network.
               onClick={async () => {
                 if (window.confirm("Are you sure you want to permanently delete this resort and all its data? This cannot be undone.")) {
                   try {
-                    const res = await fetch(`http://localhost:5000/api/resorts/${resort.id}`, { method: 'DELETE' });
+                    const res = await fetch(`/api/resorts/${resort.id}`, { method: 'DELETE' });
                     if (res.ok) {
                       setActiveResortIdx(0);
                       fetchResorts();
@@ -560,7 +560,7 @@ Verified by HampiStays Partner Network.
                                       onClick={async () => {
                                         if (window.confirm("Delete this room photo?")) {
                                           try {
-                                            await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
+                                            await fetch(`/api/rooms/${room.id}/photos`, {
                                               method: "DELETE",
                                               headers: { "Content-Type": "application/json" },
                                               body: JSON.stringify({ url: img })
@@ -582,7 +582,7 @@ Verified by HampiStays Partner Network.
                                     const reader = new FileReader();
                                     reader.onloadend = async () => {
                                       try {
-                                        const r1 = await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
+                                        const r1 = await fetch(`/api/rooms/${room.id}/photos`, {
                                           method: "POST",
                                           headers: { "Content-Type": "application/json" },
                                           body: JSON.stringify({ url: reader.result as string })
@@ -628,7 +628,7 @@ Verified by HampiStays Partner Network.
                             const reader = new FileReader();
                             reader.onloadend = async () => {
                               try {
-                                const res = await fetch(`http://localhost:5000/api/resorts/${resort.id}/photos`, {
+                                const res = await fetch(`/api/resorts/${resort.id}/photos`, {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({ url: reader.result as string })

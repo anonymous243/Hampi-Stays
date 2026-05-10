@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useLocation, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck, CreditCard, Lock,
@@ -28,8 +28,13 @@ const PAYMENT_METHODS = [
   { id: "netbanking", label: "Net Banking", sub: "All major banks" },
 ];
 
+declare global {
+  interface Window {
+    Cashfree: any;
+  }
+}
+
 export function CheckoutPage() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
@@ -76,23 +81,18 @@ export function CheckoutPage() {
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
+      // 1. Initialize Cashfree
+      const cashfree = window.Cashfree({
+        mode: "sandbox", // Use "production" for real payments
+      });
+
       const allRequests = [
         ...selectedRequests.map(id => SPECIAL_REQUEST_OPTIONS.find(o => o.id === id)?.label || id),
         specialNote,
       ].filter(Boolean).join("; ");
 
-      console.log("Submitting booking payload:", {
-        userId: user?.id,
-        resortId: bookingData.resortId,
-        roomId: bookingData.roomId,
-        checkIn: bookingData.checkIn,
-        checkOut: bookingData.checkOut,
-        guests: bookingData.adults,
-        totalPrice: grandTotal,
-        specialRequests: allRequests,
-      });
-
-      const response = await fetch("http://localhost:5000/api/bookings", {
+      // 2. Create Order on Backend
+      const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,31 +104,29 @@ export function CheckoutPage() {
           guests: bookingData.adults,
           totalPrice: grandTotal,
           specialRequests: allRequests,
+          phone: guestInfo.phone,
+          customerName: guestInfo.name
         }),
       });
 
-      if (response.ok) {
-        const booking = await response.json();
-        console.log("Booking successful:", booking);
-        navigate("/booking-confirmation", {
-          state: {
-            booking,
-            resortName: bookingData.resortName,
-            roomName: bookingData.roomName,
-            image: bookingData.image,
-            nights,
-            grandTotal,
-            guestName: guestInfo.name,
-          },
-        });
-      } else {
-        const errorData = await response.json();
-        console.error("Booking failed on server:", errorData);
-        alert(`Booking failed: ${errorData.details || "Please try again."}`);
+      if (!response.ok) throw new Error("Failed to create booking");
+      const booking = await response.json();
+
+      if (!booking.paymentSessionId) {
+        throw new Error("Could not initialize payment session. Please try again.");
       }
-    } catch (err) {
-      console.error("Booking submission error:", err);
-      alert("Something went wrong. Please check your connection.");
+
+      // 3. Launch Cashfree Checkout
+      let checkoutOptions = {
+        paymentSessionId: booking.paymentSessionId,
+        redirectTarget: "_self", // "modal" is also an option
+      };
+
+      cashfree.checkout(checkoutOptions);
+
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      alert(err.message || "Something went wrong. Please check your connection.");
     } finally {
       setIsProcessing(false);
     }

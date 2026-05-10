@@ -6,8 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 
 export function ForgotPasswordPage() {
-  const [method, setMethod] = useState<"email" | "phone">("email");
-  const [value, setValue] = useState("");
+  const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -46,15 +45,15 @@ export function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!value) return;
+    if (!email) return;
 
     setIsLoading(true);
     setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/forgot-password", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [method]: value })
+        body: JSON.stringify({ email })
       });
 
       if (response.ok) {
@@ -169,39 +168,8 @@ export function ForgotPasswordPage() {
                 <motion.div variants={itemVariant} className="text-center mb-6">
                   <h1 className="text-xl md:text-2xl font-serif font-bold text-navy-950 mb-2">Reset Password</h1>
                   <p className="text-navy-800/60 font-medium text-[10px] md:text-xs">
-                    Enter your details to receive a reset link.
+                    Enter your email to receive a reset link.
                   </p>
-                </motion.div>
-
-                <motion.div variants={itemVariant} className="flex p-1 bg-sand-200/50 rounded-xl mb-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMethod("email");
-                      setValue("");
-                    }}
-                    className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-300 ${
-                      method === "email" 
-                        ? "bg-white text-navy-950 shadow-sm" 
-                        : "text-navy-800/60 hover:text-navy-900"
-                    }`}
-                  >
-                    Email
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMethod("phone");
-                      setValue("");
-                    }}
-                    className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-300 ${
-                      method === "phone" 
-                        ? "bg-white text-navy-950 shadow-sm" 
-                        : "text-navy-800/60 hover:text-navy-900"
-                    }`}
-                  >
-                    Phone
-                  </button>
                 </motion.div>
 
                 <motion.form variants={itemVariant} className="space-y-4" onSubmit={handleSubmit}>
@@ -211,11 +179,11 @@ export function ForgotPasswordPage() {
                     </div>
                   )}
                   <Input 
-                    label={method === "email" ? "Email Address" : "Phone Number"} 
-                    type={method === "email" ? "email" : "tel"} 
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    placeholder={method === "email" ? "name@example.com" : "+91 98765 43210"}
+                    label="Email Address" 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
                     required 
                   />
 
@@ -233,10 +201,10 @@ export function ForgotPasswordPage() {
                 <div className="w-12 h-12 bg-gold-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-6 h-6 text-gold-600" />
                 </div>
-                <h2 className="text-xl font-serif font-bold text-navy-950 mb-2">Check your {method}</h2>
+                <h2 className="text-xl font-serif font-bold text-navy-950 mb-2">Check your Email</h2>
                 <p className="text-navy-800/70 font-medium text-xs leading-relaxed mb-6">
                   We have sent a reset link to <br/>
-                  <span className="font-bold text-navy-950">{value}</span>
+                  <span className="font-bold text-navy-950">{email}</span>
                 </p>
                 <Button 
                   onClick={() => setSubmitted(false)} 

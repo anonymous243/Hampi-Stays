@@ -80,7 +80,7 @@ export function RegisterPage() {
     setError("");
     try {
       // Check if email already exists before proceeding
-      const response = await fetch('http://localhost:5000/api/auth/check-email', {
+      const response = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),

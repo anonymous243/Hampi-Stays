@@ -50,7 +50,7 @@ export function ResortCard({
     const checkWishlist = async () => {
       if (!user) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/users/${user.id}/wishlist`);
+        const res = await fetch(`/api/users/${user.id}/wishlist`);
         if (res.ok) {
           const list = await res.json();
           setIsFav(list.some((r: any) => r.id === resort.id));
@@ -71,7 +71,7 @@ export function ResortCard({
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/toggle`, {
+      const response = await fetch(`/api/wishlist/toggle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, resortId: resort.id })
@@ -241,3 +241,4 @@ export function ResortCard({
     </div>
   );
 }
+

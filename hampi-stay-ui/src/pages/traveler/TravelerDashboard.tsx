@@ -30,8 +30,8 @@ export function TravelerDashboard() {
       if (!user) return;
       try {
         const [bookingsRes, wishlistRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/users/${user.id}/bookings`),
-          fetch(`http://localhost:5000/api/users/${user.id}/wishlist`)
+          fetch(`/api/users/${user.id}/bookings`),
+          fetch(`/api/users/${user.id}/wishlist`)
         ]);
 
         if (bookingsRes.ok) setBookings(await bookingsRes.json());
@@ -51,7 +51,7 @@ export function TravelerDashboard() {
     if (activeTab === 'inbox' && activeMessageBooking) {
       const fetchMessages = async () => {
         try {
-          const res = await fetch(`http://localhost:5000/api/messages/${activeMessageBooking.id}`);
+          const res = await fetch(`/api/messages/${activeMessageBooking.id}`);
           if (res.ok) setMessages(await res.json());
         } catch (err) {
           console.error("Poll failed", err);
@@ -68,7 +68,7 @@ export function TravelerDashboard() {
     if (!newMessage.trim() || !activeMessageBooking) return;
     
     try {
-      const response = await fetch("http://localhost:5000/api/messages", {
+      const response = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -424,3 +424,4 @@ export function TravelerDashboard() {
     </div>
   );
 }
+

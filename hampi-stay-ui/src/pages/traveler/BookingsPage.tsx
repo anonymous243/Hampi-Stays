@@ -25,7 +25,7 @@ export function BookingsPage() {
   const fetchBookings = useCallback(async () => {
     if (!user) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${user.id}/bookings`);
+      const response = await fetch(`/api/users/${user.id}/bookings`);
       if (response.ok) {
         const data = await response.json();
         setBookings(data);
@@ -59,7 +59,7 @@ export function BookingsPage() {
     if (!confirm("Are you sure you want to cancel this booking? This cannot be undone.")) return;
     setCancellingId(bookingId);
     try {
-      const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/cancel`, {
+      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
@@ -76,7 +76,7 @@ export function BookingsPage() {
 
   const handleReview = async (resortId: string) => {
     try {
-      const response = await fetch("http://localhost:5000/api/reviews", {
+      const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -436,3 +436,4 @@ For support: concierge@hampistays.com
     </div>
   );
 }
+

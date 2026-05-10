@@ -155,7 +155,7 @@ export function ResortSetupPage() {
     }
     setIsPublishing(true);
     try {
-      const response = await fetch("http://localhost:5000/api/resorts", {
+      const response = await fetch("/api/resorts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -540,3 +540,4 @@ export function ResortSetupPage() {
     </div>
   );
 }
+
