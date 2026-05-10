@@ -36,7 +36,7 @@ export function Experiences() {
       description: "Pedal through the ancient bazaar and forgotten village paths that no car can reach.",
       price: 2500,
       meetingPoint: "Hampi Bazaar",
-      image: "https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?q=80&w=2070&auto=format&fit=crop"
+      image: "/images/experience.png"
     },
     {
       id: "f2",

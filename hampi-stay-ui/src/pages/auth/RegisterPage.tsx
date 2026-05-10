@@ -28,6 +28,7 @@ export function RegisterPage() {
   }, []);
   
   const hampiImages = [
+    "/images/auth-bg.png", // Serene Dawn Landscape
     "/images/hampi-1.png", // Stone Chariot
     "/images/hampi-4.png", // Lotus Mahal
     "/images/hampi-2.png", // Virupaksha
@@ -78,9 +79,18 @@ export function RegisterPage() {
 
     setError("");
     try {
-      // Simulate sending OTP
-      console.log("Sending OTP to:", verificationMethod === "email" ? formData.email : formData.phone);
-      setStep(4);
+      // Check if email already exists before proceeding
+      const response = await fetch('http://localhost:5000/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Validation failed');
+      
+      // Email is available, proceed to verification selection
+      setStep(3);
     } catch (err: any) {
       setError(err.message);
     }
@@ -131,9 +141,10 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">
+    <div className="min-h-screen bg-sand-50 flex items-center justify-center p-4 md:p-6 lg:p-8">
+      <div className="w-full max-w-[1400px] md:h-[800px] flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">
       {/* ── LEFT PANEL: Form ── */}
-      <div className="relative w-full md:w-1/2 h-full md:h-auto md:flex-1 flex flex-col items-center p-6 md:p-12 lg:p-24 z-10 bg-white/40 backdrop-blur-md rounded-[15px] border border-white/20 overflow-y-auto">
+      <div className="relative w-full md:w-1/2 h-[60vh] md:h-full flex flex-col items-center p-6 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
         {/* Ambient orbs */}
         <div className="absolute top-1/3 left-0 w-[500px] h-[500px] bg-gold-200/20 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-sand-300/20 rounded-full blur-[100px] pointer-events-none" />
@@ -158,7 +169,7 @@ export function RegisterPage() {
             {/* Logo */}
             <div className="flex justify-center mb-8 mt-4 relative z-20">
               <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
-                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-14 w-auto object-contain drop-shadow-md" />
+                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
               </Link>
             </div>
 
@@ -455,13 +466,7 @@ export function RegisterPage() {
                       </label>
                     </div>
 
-                    <Button
-                      onClick={() => {
-                        if (formData.password !== formData.confirmPassword) return setError("Passwords do not match");
-                        if (!formData.terms) return setError("You must agree to the terms");
-                        setStep(3);
-                      }}
-                    >
+                    <Button type="submit">
                       Continue to Verification
                     </Button>
                   </motion.form>
@@ -628,10 +633,7 @@ export function RegisterPage() {
       </div>
 
       {/* ── RIGHT PANEL: Cinematic Image ── */}
-      <div
-        className="hidden md:flex relative w-1/2 h-full md:h-auto md:flex-1 overflow-hidden rounded-[15px] shadow-2xl"
-        style={{ background: "linear-gradient(160deg, #1a2340 0%, #0B132B 60%, #0B132B 100%)" }}
-      >
+      <div className="hidden md:block relative w-full md:w-1/2 h-[40vh] md:h-full overflow-hidden rounded-[3rem] shadow-2xl">
         <AnimatePresence>
           <motion.img
             key={currentImageIndex}
@@ -647,6 +649,21 @@ export function RegisterPage() {
 
         {/* gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/50 to-transparent" />
+        <div className="absolute inset-0 bg-navy-950/20" />
+
+        {/* Carousel Indicators */}
+        <div className="absolute top-8 right-10 flex gap-2 z-20">
+          {hampiImages.map((_, idx) => (
+            <div key={idx} className="h-[2px] w-8 rounded-full bg-white/20 overflow-hidden backdrop-blur-sm">
+              <motion.div
+                className="h-full bg-gold-400"
+                initial={{ width: "0%" }}
+                animate={{ width: currentImageIndex === idx ? "100%" : currentImageIndex > idx ? "100%" : "0%" }}
+                transition={{ duration: currentImageIndex === idx ? 3 : 0.3, ease: "linear" }}
+              />
+            </div>
+          ))}
+        </div>
 
         {/* Bottom text */}
         <div className="absolute bottom-12 left-10 right-10 text-white z-10">
@@ -665,7 +682,7 @@ export function RegisterPage() {
 
             <h2 className="text-5xl font-serif font-bold mb-4 leading-tight">
               Begin your <br />
-              <span className="text-gold-400 italic">Journey</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold-300 via-gold-100 to-gold-500 italic drop-shadow-sm">Journey</span>
             </h2>
             <p className="text-sand-100/80 max-w-sm leading-relaxed text-base">
               Join our exclusive community of luxury travelers and premium resort
@@ -687,6 +704,7 @@ export function RegisterPage() {
             </div>
           </motion.div>
         </div>
+      </div>
       </div>
     </div>
   );

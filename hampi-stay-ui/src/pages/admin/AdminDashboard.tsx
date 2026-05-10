@@ -7,8 +7,9 @@ import {
   Eye, EyeOff
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { cn } from "../../utils/cn";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -24,22 +25,43 @@ export function AdminDashboard() {
   const [modalData, setModalData] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [pendingPayouts, setPendingPayouts] = useState<any[]>([]);
+  const [securityData, setSecurityData] = useState<{ logs: any[], activeSessions: number }>({ logs: [], activeSessions: 0 });
+  const [flaggedReviews, setFlaggedReviews] = useState<any[]>([]);
 
   useEffect(() => {
     fetchInitialData();
   }, []);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTab === 'security') {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch("/api/admin/security/stats");
+          if (res.ok) setSecurityData(await res.json());
+        } catch (err) {
+          console.error("Security poll failed", err);
+        }
+      }, 10000); // Poll every 10 seconds
+    }
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes] = await Promise.all([
+      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes, payoutsRes, securityRes] = await Promise.all([
         fetch("/api/admin/resorts/pending"),
         fetch("/api/admin/resorts/active"),
         fetch("/api/users/list"),
         fetch("/api/admin/stats"),
         fetch("/api/admin/bookings/all"),
         fetch("/api/admin/guides"),
-        fetch("/api/settings")
+        fetch("/api/settings"),
+        fetch("/api/admin/payouts"),
+        fetch("/api/admin/security/stats"),
+        fetch("/api/admin/reviews/flagged")
       ]);
       
       if (pendingRes.ok) setPendingResorts(await pendingRes.json());
@@ -47,7 +69,16 @@ export function AdminDashboard() {
       if (usersRes.ok) setAllUsers(await usersRes.json());
       if (statsRes.ok) setStats(await statsRes.json());
       if (bookingsRes.ok) setAllBookings(await bookingsRes.json());
-      if (guidesRes.ok) setAllGuides(await guidesRes.json());
+      if (guidesRes.ok) {
+        const guidesData = await guidesRes.json();
+        setAllGuides(Array.isArray(guidesData) ? guidesData : []);
+      }
+      if (payoutsRes.ok) setPendingPayouts(await payoutsRes.json());
+      if (securityRes.ok) setSecurityData(await securityRes.json());
+      if (pendingRes.ok && usersRes.ok) { // Check for reviews res
+          const reviewsRes = await fetch("/api/admin/reviews/flagged");
+          if (reviewsRes.ok) setFlaggedReviews(await reviewsRes.json());
+      }
       if (settingsRes.ok) {
         const settings = await settingsRes.json();
         setGuideServiceEnabled(settings.guideServiceEnabled);
@@ -67,11 +98,16 @@ export function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
       });
-      if (res.ok) {
-        setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status } : g));
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with ${res.status}`);
       }
-    } catch (err) {
-      console.error(err);
+
+      setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, status } : g));
+    } catch (err: any) {
+      console.error("Guide Status Update Error:", err);
+      alert(`Error: ${err.message || 'Failed to update guide status'}`);
     } finally {
       setProcessingId(null);
     }
@@ -119,6 +155,10 @@ export function AdminDashboard() {
     }
   };
 
+  const handleSystemTask = (task: AdminTab) => {
+    setActiveTab(task);
+  };
+
   const renderOverview = () => (
     <div className="space-y-8">
       {/* Stats Grid */}
@@ -145,6 +185,55 @@ export function AdminDashboard() {
         ))}
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Global Revenue Trends */}
+        <div className="lg:col-span-8 bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-10 overflow-hidden relative">
+           <div className="flex items-center justify-between mb-10">
+              <div>
+                 <h3 className="text-xl font-bold text-navy-950">Platform Revenue Growth</h3>
+                 <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest mt-1">Global Marketplace Performance</p>
+              </div>
+              <div className="flex gap-2">
+                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold">
+                    <TrendingUp className="w-3 h-3" /> +14.2%
+                 </div>
+              </div>
+           </div>
+
+           <div className="h-64 flex items-end gap-3 relative">
+              {[35, 42, 38, 55, 72, 85, 95].map((val, i) => (
+                <div key={i} className="flex-grow group relative flex flex-col justify-end h-full">
+                  <motion.div 
+                    initial={{ height: 0 }}
+                    animate={{ height: `${val}%` }}
+                    transition={{ delay: i * 0.1, duration: 1 }}
+                    className="w-full bg-navy-950 rounded-t-xl group-hover:bg-gold-500 transition-colors cursor-pointer"
+                  />
+                  <p className="mt-4 text-[8px] font-bold text-navy-950/20 text-center uppercase">M-{i+1}</p>
+                </div>
+              ))}
+           </div>
+        </div>
+
+        {/* Platform Health Metrics */}
+        <div className="lg:col-span-4 space-y-6">
+           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-4">Avg. Booking Value</p>
+              <p className="text-3xl font-serif font-bold text-navy-950 italic">₹{(stats?.avgBookingValue || 8450).toLocaleString()}</p>
+              <p className="text-[9px] text-green-600 font-bold mt-2 flex items-center gap-1">
+                 <TrendingUp className="w-3 h-3" /> 8% Higher than last month
+              </p>
+           </div>
+           <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+              <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-4">Cancellation Rate</p>
+              <p className="text-3xl font-serif font-bold text-navy-950 italic">{(stats?.cancellationRate || 4.2)}%</p>
+              <div className="mt-4 w-full bg-sand-100 h-1.5 rounded-full overflow-hidden">
+                 <div className="bg-navy-950 h-full w-[4.2%]" />
+              </div>
+           </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Activity */}
         <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-sand-200 shadow-sm p-8">
@@ -169,18 +258,39 @@ export function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-navy-950 rounded-[2.5rem] p-8 text-white">
+        <div className="bg-navy-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden">
           <h3 className="text-xl font-bold mb-6 text-gold-400">System Tasks</h3>
           <div className="space-y-4">
-            <Button className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl">
+            <Button 
+              onClick={() => handleSystemTask('payouts')}
+              className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
+            >
               <AlertCircle className="w-5 h-5" />
               Verify Payouts
+              {pendingPayouts.length > 0 && <span className="absolute right-4 w-2 h-2 bg-gold-500 rounded-full" />}
             </Button>
-            <Button className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl">
+            
+            <Button 
+              onClick={() => handleSystemTask('newsletter')}
+              className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl"
+            >
               <Mail className="w-5 h-5" />
               Send Newsletter
             </Button>
-            <Button className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 justify-start gap-3 h-14 rounded-2xl mt-4">
+
+            <Button 
+              onClick={() => handleSystemTask('reviews')}
+              className="w-full bg-white/10 hover:bg-white/20 border-white/10 text-white justify-start gap-3 h-14 rounded-2xl relative"
+            >
+              <Star className="w-5 h-5" />
+              Moderate Reviews
+              {flaggedReviews.length > 0 && <span className="absolute right-4 bg-red-500 text-[8px] font-bold px-1.5 py-0.5 rounded-full">{flaggedReviews.length}</span>}
+            </Button>
+            
+            <Button 
+              onClick={() => handleSystemTask('security')}
+              className="w-full bg-gold-500 hover:bg-gold-400 text-navy-950 justify-start gap-3 h-14 rounded-2xl mt-4"
+            >
               <ShieldCheck className="w-5 h-5" />
               Security Audit
             </Button>
@@ -419,40 +529,65 @@ export function AdminDashboard() {
   };
 
   const handleGuideActiveToggle = async (profileId: string, currentStatus: boolean) => {
+    setProcessingId(profileId);
     try {
       const res = await fetch(`/api/admin/guides/${profileId}/toggle-active`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: !currentStatus })
       });
-      if (res.ok) {
-        setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, isActive: !currentStatus } : g));
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with ${res.status}`);
       }
-    } catch (err) {
-      console.error(err);
+
+      setAllGuides(prev => prev.map(g => g.id === profileId ? { ...g, isActive: !currentStatus } : g));
+    } catch (err: any) {
+      console.error("Guide Toggle Error:", err);
+      alert(`Error: ${err.message || 'Failed to toggle guide visibility'}`);
+    } finally {
+      setProcessingId(null);
     }
   };
 
-  const handleAllGuidesStatus = async (status: boolean) => {
+  const handleAllGuidesStatus = (status: boolean) => {
     setModalData({
       title: status ? "Activate All Experts" : "Global Expert Shutdown",
-      message: `Are you sure you want to ${status ? 'activate' : 'hide'} ALL expert guides across the entire platform?`,
+      message: `Are you sure you want to ${status ? 'activate' : 'hide'} ALL expert guides across the entire platform? This action affects all ${allGuides.length} guides.`,
       onConfirm: async () => {
         setProcessingId('system-toggle');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
         try {
           const res = await fetch(`/api/admin/guides/toggle-all`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ isActive: status })
+            body: JSON.stringify({ isActive: status }),
+            signal: controller.signal
           });
-          if (res.ok) {
-            setAllGuides(prev => prev.map(g => ({ ...g, isActive: status })));
-            setShowConfirmModal(false);
+          
+          clearTimeout(timeoutId);
+
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server responded with status ${res.status}`);
           }
-        } catch (err) {
-          console.error(err);
+
+          setAllGuides(prev => prev.map(g => ({ ...g, isActive: status })));
+          setShowConfirmModal(false);
+          // Optional: Add a subtle toast or success feedback here if available
+        } catch (err: any) {
+          console.error("Bulk Status Error:", err);
+          if (err.name === 'AbortError') {
+            alert("Error: Request timed out. The server might be busy processing the bulk update.");
+          } else {
+            alert(`Error: ${err.message || 'Failed to update experts status'}`);
+          }
         } finally {
           setProcessingId(null);
+          clearTimeout(timeoutId);
         }
       }
     });
@@ -596,15 +731,15 @@ export function AdminDashboard() {
            </div>
            <div className="w-px h-10 bg-sand-200" />
            <Button 
-             variant={allGuides.every(g => !g.isActive) ? "primary" : "outline"}
-             onClick={() => handleAllGuidesStatus(allGuides.every(g => !g.isActive))}
+             variant={allGuides.some(g => !g.isActive) ? "primary" : "outline"}
+             onClick={() => handleAllGuidesStatus(allGuides.some(g => !g.isActive))}
              className={`rounded-2xl h-12 px-8 font-bold border-2 transition-all ${
-               allGuides.every(g => !g.isActive) 
+               allGuides.some(g => !g.isActive) 
                  ? "bg-green-600 border-green-600 text-white hover:bg-green-700" 
                  : "border-red-200 text-red-600 hover:bg-red-50"
              }`}
            >
-             {allGuides.every(g => !g.isActive) ? (
+             {allGuides.some(g => !g.isActive) ? (
                <><Eye className="w-4 h-4 mr-2" /> Activate All Experts</>
              ) : (
                <><EyeOff className="w-4 h-4 mr-2" /> Global Shutdown</>
@@ -777,7 +912,20 @@ export function AdminDashboard() {
                   </span>
                 </td>
                 <td className="px-8 py-6">
-                  <Button variant="outline" className="h-8 px-4 text-xs rounded-full">Edit</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="h-8 px-4 text-xs rounded-full">Edit</Button>
+                    <Button 
+                      variant="outline" 
+                      className="h-8 px-4 text-xs rounded-full border-red-200 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        if (window.confirm(`Are you sure you want to suspend ${user.name}? They will lose all platform access.`)) {
+                          // Logic for suspension
+                        }
+                      }}
+                    >
+                      Suspend
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -855,6 +1003,220 @@ export function AdminDashboard() {
     </div>
   );
 
+  const renderPayouts = () => (
+    <div className="space-y-8">
+      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-2xl font-bold text-navy-950">Verify Resort Payouts</h3>
+            <p className="text-sm text-navy-950/40">Audit and release funds to resort owners after guest checkout.</p>
+          </div>
+          <div className="bg-emerald-50 text-emerald-700 px-6 py-3 rounded-2xl">
+            <p className="text-[10px] font-bold uppercase tracking-widest">Total Pending</p>
+            <p className="text-xl font-bold">₹{pendingPayouts.reduce((sum, p) => sum + p.amount, 0).toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+                <th className="px-8 py-4">Resort</th>
+                <th className="px-8 py-4">Booking Ref</th>
+                <th className="px-8 py-4">Amount</th>
+                <th className="px-8 py-4">Status</th>
+                <th className="px-8 py-4">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-sand-100">
+              {pendingPayouts.map((payout) => (
+                <tr key={payout.id} className="hover:bg-sand-50/30 transition-colors">
+                  <td className="px-8 py-6 font-bold text-navy-950">{payout.resort}</td>
+                  <td className="px-8 py-6 font-mono text-gold-700">{payout.ref}</td>
+                  <td className="px-8 py-6 font-bold text-navy-950">₹{payout.amount.toLocaleString()}</td>
+                  <td className="px-8 py-6">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                      payout.status === 'READY' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {payout.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-8 py-6">
+                    <Button 
+                      variant={payout.status === 'READY' ? "primary" : "outline"}
+                      disabled={payout.status !== 'READY'}
+                      className="h-10 px-6 text-xs rounded-xl"
+                    >
+                      Verify & Release
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {pendingPayouts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-8 py-20 text-center text-navy-950/30 italic">
+                    No pending payouts found in the system.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderNewsletter = () => (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="bg-navy-950 rounded-[3rem] p-12 text-white shadow-luxury">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center">
+            <Mail className="w-8 h-8 text-gold-400" />
+          </div>
+          <div>
+            <h3 className="text-3xl font-serif font-bold">Campaign Manager</h3>
+            <p className="text-white/40 text-sm italic">Direct broadcast to {stats?.userCount || 0} registered guests</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400 mb-2">Subject Line</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Discover the Secrets of Vijayanagara..."
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gold-400 mb-2">Newsletter Content</label>
+            <textarea 
+              rows={10}
+              placeholder="Dear Luxury Traveler, experience Hampi like never before..."
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-gold-500 transition-colors resize-none"
+            />
+          </div>
+          <div className="flex items-center justify-between pt-4">
+            <div className="flex gap-4">
+               <span className="flex items-center gap-2 text-xs text-white/40">
+                 <Users className="w-4 h-4" /> {stats?.userCount || 0} Recipients
+               </span>
+               <span className="flex items-center gap-2 text-xs text-white/40">
+                 <CalendarDays className="w-4 h-4" /> Scheduled: Instant
+               </span>
+            </div>
+            <Button className="bg-gold-500 hover:bg-gold-400 text-navy-950 h-14 px-12 rounded-2xl font-bold shadow-gold">
+              Send Broadcast Now
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSecurity = () => (
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <ShieldCheck className="w-8 h-8 text-emerald-600" />
+            <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Secure</span>
+          </div>
+          <h4 className="text-sm font-bold text-navy-950 mb-1">System Health</h4>
+          <p className="text-2xl font-bold text-navy-950">100% Online</p>
+          <div className="mt-4 w-full bg-sand-100 h-1 rounded-full overflow-hidden">
+            <div className="bg-emerald-500 h-full w-[100%]" />
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <Users className="w-8 h-8 text-blue-600" />
+            <span className="bg-blue-50 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Active</span>
+          </div>
+          <h4 className="text-sm font-bold text-navy-950 mb-1">Live Sessions</h4>
+          <p className="text-2xl font-bold text-navy-950">{securityData.activeSessions} Users</p>
+          <p className="text-[10px] text-navy-950/40 mt-1 uppercase">Across 3 continents</p>
+        </div>
+        <div className="bg-white p-8 rounded-[2.5rem] border border-sand-200 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <AlertCircle className="w-8 h-8 text-gold-600" />
+            <span className="bg-gold-50 text-gold-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Normal</span>
+          </div>
+          <h4 className="text-sm font-bold text-navy-950 mb-1">Threat Level</h4>
+          <p className="text-2xl font-bold text-navy-950">Zero Threats</p>
+          <p className="text-[10px] text-navy-950/40 mt-1 uppercase">Last scan: Just now</p>
+        </div>
+      </div>
+
+      <div className="bg-navy-950 rounded-[3rem] p-8 text-white">
+        <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+          <TrendingUp className="w-5 h-5 text-gold-400" />
+          Real-time Security Logs
+        </h3>
+        <div className="space-y-4 font-mono text-[10px] opacity-60">
+          {securityData.logs.map((log, i) => (
+            <div key={i} className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="flex gap-8">
+                <span className="text-gold-400">[{log.time}]</span>
+                <span>{log.event}</span>
+                <span className="opacity-40">IP: {log.ip}</span>
+              </div>
+              <span className="text-emerald-400">{log.status}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderReviews = () => (
+    <div className="space-y-8">
+      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+           <div>
+              <h3 className="text-2xl font-bold text-navy-950">Review Moderation</h3>
+              <p className="text-sm text-navy-950/40">Moderate flagged or inappropriate community reviews.</p>
+           </div>
+           <div className="px-6 py-2 bg-red-50 text-red-700 rounded-xl text-xs font-bold uppercase tracking-widest">
+              {flaggedReviews.length} Flagged
+           </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+           {flaggedReviews.length > 0 ? flaggedReviews.map((review: any) => (
+             <div key={review.id} className="p-8 rounded-[2rem] border border-sand-100 bg-sand-50/30 flex flex-col md:flex-row gap-8 items-start">
+                <div className="flex-grow">
+                   <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-navy-950 border border-sand-200">
+                         {review.user?.name[0]}
+                      </div>
+                      <div>
+                         <p className="text-sm font-bold text-navy-950">{review.user?.name}</p>
+                         <div className="flex gap-1 text-gold-500 mt-0.5">
+                            {[...Array(5)].map((_, i) => <Star key={i} className={cn("w-3 h-3 fill-current", i >= review.rating && "text-sand-200 fill-none")} />)}
+                         </div>
+                      </div>
+                   </div>
+                   <p className="text-sm text-navy-950/70 italic leading-relaxed mb-4">"{review.comment}"</p>
+                   <div className="flex items-center gap-4 text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">
+                      <span>Flagged for: {review.flagReason || 'Inappropriate Content'}</span>
+                      <span>•</span>
+                      <span>Posted on {review.resort?.name}</span>
+                   </div>
+                </div>
+                <div className="flex gap-3">
+                   <Button className="rounded-xl h-12 px-6 bg-emerald-600 hover:bg-emerald-700 text-white">Keep Review</Button>
+                   <Button variant="outline" className="rounded-xl h-12 px-6 border-red-200 text-red-600 hover:bg-red-50">Delete Permanently</Button>
+                </div>
+             </div>
+           )) : (
+             <div className="text-center py-20 text-navy-950/30 italic">No reviews currently flagged for moderation.</div>
+           )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -908,6 +1270,10 @@ export function AdminDashboard() {
             {activeTab === "guides" && renderGuides()}
             {activeTab === "users" && renderUsers()}
             {activeTab === "bookings" && renderBookings()}
+            {activeTab === "payouts" && renderPayouts()}
+            {activeTab === "newsletter" && renderNewsletter()}
+            {activeTab === "security" && renderSecurity()}
+            {activeTab === "reviews" && renderReviews()}
           </motion.div>
         )}
       </div>

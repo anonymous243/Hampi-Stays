@@ -59,7 +59,7 @@ export function ProfilePage() {
         setTimeout(() => setShowSuccess(false), 3000);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Profile update failed:", err);
     } finally {
       setIsUpdating(false);
     }
@@ -114,7 +114,7 @@ export function ProfilePage() {
                           });
                           const data = await res.json();
                           setFormData(prev => ({...prev, avatar: data.url}));
-                        } catch (err) {
+                        } catch {
                           alert("Failed to upload image. Please try again.");
                         }
                       }}
@@ -298,7 +298,7 @@ export function ProfilePage() {
                               const res = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: uploadData });
                               const data = await res.json();
                               setFormData(prev => ({...prev, idImage: data.url}));
-                            } catch (err) { alert("Failed to upload document."); }
+                            } catch { alert("Failed to upload document."); }
                           }}
                         />
                       )}

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Award, Star, ArrowRight, 
-  ShieldCheck, Search, Sparkles, CheckCircle2
+  ShieldCheck, Search, Sparkles, CheckCircle2,
+  Calendar, Clock, MapPin, X, Award, Star, ArrowRight
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 interface Guide {
   id: string;
@@ -13,38 +14,88 @@ interface Guide {
   specialties: string[];
   languages: string[];
   pricePerDay: number;
+  pricePerHour: number;
   yearsExperience: number;
+  rating: number;
+  reviewCount: number;
+  isVerified: boolean;
   user: {
+    id: string;
     name: string;
+    email: string;
+    avatar: string | null;
   };
   experiences: any[];
 }
 
 export function LocalExpertsPage() {
+  const { user } = useAuth();
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchGuides();
-  }, []);
+  const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingHours, setBookingHours] = useState(4);
+  const [bookingMeetingPoint, setBookingMeetingPoint] = useState("");
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   const fetchGuides = async () => {
     try {
-      const res = await fetch('/api/guides');
+      const res = await fetch('http://localhost:5000/api/guides');
       if (!res.ok) throw new Error('API request failed');
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setGuides(data);
-      } else {
-        console.warn("API did not return an array:", data);
-        setGuides([]);
-      }
+      setGuides(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch guides", err);
       setGuides([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGuides();
+  }, []);
+
+  const handleBookGuide = async () => {
+    if (!selectedGuide || !bookingDate || !bookingMeetingPoint) return;
+    if (!user) {
+      window.location.href = '/login';
+      return;
+    }
+    setIsBooking(true);
+    try {
+      const totalPrice = selectedGuide.pricePerDay * (bookingHours / 8);
+      const res = await fetch(`http://localhost:5000/api/guides/${selectedGuide.id}/book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          guideId: selectedGuide.id,
+          date: bookingDate,
+          durationHours: bookingHours,
+          meetingPoint: bookingMeetingPoint,
+          totalPrice,
+        })
+      });
+      if (res.ok) {
+        setBookingSuccess(true);
+        setBookingDate("");
+        setBookingMeetingPoint("");
+        setBookingHours(4);
+        setTimeout(() => {
+          setBookingSuccess(false);
+          setSelectedGuide(null);
+        }, 2500);
+      } else {
+        const err = await res.json();
+        console.error("Booking failed:", err);
+      }
+    } catch (err) {
+      console.error("Booking failed", err);
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -59,10 +110,7 @@ export function LocalExpertsPage() {
       <section className="pt-40 pb-20 relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gold-200/20 rounded-full blur-[120px] -z-10" />
         <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-6 shadow-sm">
               <Award className="w-3 h-3" /> Hampi Expert Network
             </div>
@@ -112,15 +160,27 @@ export function LocalExpertsPage() {
                 {/* Profile Header */}
                 <div className="p-10 pb-6 border-b border-sand-50">
                   <div className="flex items-start justify-between mb-6">
-                    <div className="w-24 h-24 rounded-3xl bg-sand-50 border-2 border-sand-100 flex items-center justify-center text-4xl font-serif font-bold text-navy-950 shadow-inner group-hover:bg-navy-950 group-hover:text-white transition-colors duration-500">
-                      {guide.user.name.charAt(0)}
+                    {/* Real Avatar */}
+                    <div className="w-24 h-24 rounded-3xl bg-sand-50 border-2 border-sand-100 overflow-hidden flex items-center justify-center shadow-inner">
+                      {guide.user.avatar ? (
+                        <img src={guide.user.avatar} className="w-full h-full object-cover" alt={guide.user.name} />
+                      ) : (
+                        <span className="text-4xl font-serif font-bold text-navy-950 group-hover:text-gold-600 transition-colors duration-500">
+                          {guide.user.name.charAt(0)}
+                        </span>
+                      )}
                     </div>
+                    {/* Real Rating */}
                     <div className="text-right">
                       <div className="flex items-center gap-1 text-gold-500 mb-1 justify-end">
                         <Star className="w-4 h-4 fill-current" />
-                        <span className="text-sm font-bold text-navy-950">4.9</span>
+                        <span className="text-sm font-bold text-navy-950">
+                          {guide.rating > 0 ? guide.rating.toFixed(1) : "New"}
+                        </span>
                       </div>
-                      <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">48 reviews</p>
+                      <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">
+                        {guide.reviewCount > 0 ? `${guide.reviewCount} reviews` : "No reviews yet"}
+                      </p>
                     </div>
                   </div>
                   
@@ -132,9 +192,7 @@ export function LocalExpertsPage() {
 
                 {/* Info Area */}
                 <div className="p-10 flex-1 space-y-8">
-                  <p className="text-navy-950/60 text-sm leading-relaxed line-clamp-3">
-                    {guide.bio}
-                  </p>
+                  <p className="text-navy-950/60 text-sm leading-relaxed line-clamp-3">{guide.bio}</p>
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 text-sm font-bold text-navy-950/40 uppercase tracking-widest">
@@ -151,25 +209,37 @@ export function LocalExpertsPage() {
 
                   <div className="flex items-center justify-between pt-6 border-t border-sand-50">
                     <div className="flex items-center gap-4">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Experience</span>
-                        <span className="text-sm font-bold text-navy-950">12+ Years</span>
-                      </div>
-                      <div className="w-px h-8 bg-sand-100" />
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Languages</span>
-                        <span className="text-sm font-bold text-navy-950">{guide.languages[0]}, {guide.languages[1]}</span>
-                      </div>
+                      {guide.yearsExperience > 0 && (
+                        <>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Experience</span>
+                            <span className="text-sm font-bold text-navy-950">{guide.yearsExperience}+ Years</span>
+                          </div>
+                          <div className="w-px h-8 bg-sand-100" />
+                        </>
+                      )}
+                      {guide.languages.length >= 2 && (
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Languages</span>
+                          <span className="text-sm font-bold text-navy-950">{guide.languages.join(", ")}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Footer Action */}
-                <div className="p-8 pt-0">
-                  <Link to="/experiences">
-                    <Button className="w-full rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold">
-                      View All Tours
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                <div className="p-8 pt-0 flex gap-4">
+                  <Button 
+                    onClick={() => { setSelectedGuide(guide); setBookingSuccess(false); }}
+                    className="flex-1 rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold"
+                  >
+                    Book Expert
+                    <Calendar className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Link to="/experiences" className="flex-1">
+                    <Button variant="outline" className="w-full rounded-2xl h-14 border-sand-200 text-navy-950 font-bold">
+                      View Tours
                     </Button>
                   </Link>
                 </div>
@@ -177,6 +247,130 @@ export function LocalExpertsPage() {
             ))}
           </div>
         )}
+
+        {/* Booking Modal */}
+        <AnimatePresence>
+          {selectedGuide && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/40 backdrop-blur-sm">
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white rounded-[3rem] p-10 max-w-2xl w-full shadow-luxury border border-sand-200 relative overflow-hidden"
+              >
+                <button 
+                  onClick={() => setSelectedGuide(null)}
+                  className="absolute top-8 right-8 w-10 h-10 rounded-full bg-sand-50 flex items-center justify-center text-navy-950/40 hover:bg-sand-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-center gap-6 mb-10">
+                  <div className="w-20 h-20 rounded-2xl bg-sand-50 border border-sand-100 overflow-hidden flex items-center justify-center">
+                    {selectedGuide.user.avatar ? (
+                      <img src={selectedGuide.user.avatar} className="w-full h-full object-cover" alt={selectedGuide.user.name} />
+                    ) : (
+                      <span className="text-3xl font-serif font-bold text-navy-950">{selectedGuide.user.name[0]}</span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-serif font-bold text-navy-950">Book {selectedGuide.user.name}</h3>
+                    <p className="text-sm text-gold-600 font-bold uppercase tracking-widest mt-1">Private Heritage Session</p>
+                  </div>
+                </div>
+
+                {/* Success State */}
+                <AnimatePresence>
+                  {bookingSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-3 bg-green-50 border border-green-100 text-green-700 px-6 py-4 rounded-2xl mb-6"
+                    >
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
+                      <div>
+                        <p className="font-bold text-sm">Booking Request Sent!</p>
+                        <p className="text-xs opacity-70">{selectedGuide.user.name} will confirm your session shortly.</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {!bookingSuccess && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Select Date</label>
+                          <div className="relative">
+                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/20" />
+                            <input 
+                              type="date" 
+                              value={bookingDate}
+                              min={new Date().toISOString().split('T')[0]}
+                              onChange={(e) => setBookingDate(e.target.value)}
+                              className="w-full bg-sand-50 border border-sand-200 rounded-2xl pl-12 pr-6 py-4 text-sm focus:outline-none focus:border-gold-500"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Duration (Hours)</label>
+                          <div className="relative">
+                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/20" />
+                            <select 
+                              value={bookingHours}
+                              onChange={(e) => setBookingHours(parseInt(e.target.value))}
+                              className="w-full bg-sand-50 border border-sand-200 rounded-2xl pl-12 pr-6 py-4 text-sm focus:outline-none focus:border-gold-500 appearance-none"
+                            >
+                              <option value={2}>2 Hours (Express)</option>
+                              <option value={4}>4 Hours (Half Day)</option>
+                              <option value={8}>8 Hours (Full Day)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Meeting Point</label>
+                          <div className="relative">
+                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy-950/20" />
+                            <input 
+                              type="text" 
+                              value={bookingMeetingPoint}
+                              onChange={(e) => setBookingMeetingPoint(e.target.value)}
+                              placeholder="e.g. Virupaksha Temple Gate"
+                              className="w-full bg-sand-50 border border-sand-200 rounded-2xl pl-12 pr-6 py-4 text-sm focus:outline-none focus:border-gold-500"
+                            />
+                          </div>
+                        </div>
+                        <div className="p-6 bg-gold-50 rounded-2xl border border-gold-100">
+                          <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Estimated Cost</p>
+                          <p className="text-2xl font-serif font-bold text-navy-950 italic">
+                            ₹{(selectedGuide.pricePerDay * (bookingHours / 8)).toLocaleString()}
+                          </p>
+                          <p className="text-[9px] text-gold-700 font-bold mt-1">*Final price confirmed by expert</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={handleBookGuide}
+                      disabled={isBooking || !bookingDate || !bookingMeetingPoint}
+                      className="w-full h-16 rounded-[2rem] bg-navy-950 text-white text-lg font-bold shadow-luxury group overflow-hidden relative"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-3">
+                        {isBooking ? "Processing Request..." : "Confirm Booking Request"}
+                        {!isBooking && <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+                      </span>
+                      <div className="absolute inset-0 bg-gold-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                    </Button>
+                  </>
+                )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {!loading && filteredGuides.length === 0 && (
           <div className="text-center py-40">
@@ -191,35 +385,35 @@ export function LocalExpertsPage() {
       <section className="bg-navy-950 py-24 text-white overflow-hidden relative">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
           <div className="max-w-xl">
-             <h2 className="text-4xl font-serif font-bold mb-6">Verified for <span className="text-gold-400">Excellence</span></h2>
-             <p className="text-white/60 leading-relaxed mb-8">
-               Every expert in our network undergoes a rigorous background check and must maintain 
-               an active Archaeological Survey of India (ASI) certification.
-             </p>
-             <div className="grid grid-cols-2 gap-8">
-               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-gold-400">
-                    <ShieldCheck className="w-6 h-6" />
-                 </div>
-                 <span className="text-xs font-bold uppercase tracking-widest">Licensed by ASI</span>
-               </div>
-               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-gold-400">
-                    <CheckCircle2 className="w-6 h-6" />
-                 </div>
-                 <span className="text-xs font-bold uppercase tracking-widest">Background Verified</span>
-               </div>
-             </div>
+            <h2 className="text-4xl font-serif font-bold mb-6">Verified for <span className="text-gold-400">Excellence</span></h2>
+            <p className="text-white/60 leading-relaxed mb-8">
+              Every expert in our network undergoes a rigorous background check and must maintain 
+              an active Archaeological Survey of India (ASI) certification.
+            </p>
+            <div className="grid grid-cols-2 gap-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-gold-400">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest">Licensed by ASI</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-gold-400">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest">Background Verified</span>
+              </div>
+            </div>
           </div>
           <div className="flex-1 flex justify-center md:justify-end">
-             <div className="relative">
-                <div className="absolute inset-0 bg-gold-500 rounded-full blur-[100px] opacity-20" />
-                <img 
-                  src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000" 
-                  className="w-80 h-80 object-cover rounded-[3rem] shadow-2xl rotate-3"
-                  alt="Hampi Heritage"
-                />
-             </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gold-500 rounded-full blur-[100px] opacity-20" />
+              <img 
+                src="https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000" 
+                className="w-80 h-80 object-cover rounded-[3rem] shadow-2xl rotate-3"
+                alt="Hampi Heritage"
+              />
+            </div>
           </div>
         </div>
       </section>

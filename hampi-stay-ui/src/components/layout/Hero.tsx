@@ -11,6 +11,7 @@ export function Hero() {
   const isAdmin = user?.role === "ADMIN";
 
   const hampiImages = [
+    "/images/hero.png", // Luxury Resort Hero
     "/images/hampi-1.png", // Stone Chariot
     "/images/hampi-2.png", // Virupaksha Temple
     "/images/hampi-3.png", // Hampi Boulders View
@@ -20,6 +21,7 @@ export function Hero() {
   ];
 
   const imageLabels = [
+    "The Sacred Virupaksha Temple",
     "The Sacred Stone Chariot",
     "Virupaksha Temple Gateway",
     "Ancient Granite Boulders",

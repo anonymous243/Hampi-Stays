@@ -8,7 +8,7 @@ export function CTASection() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1636903684031-e187417f3e77?auto=format&fit=crop&q=80&w=2070')",
+          backgroundImage: "url('/images/cta-bg.png')",
         }}
       />
       {/* Dark overlay for the background */}

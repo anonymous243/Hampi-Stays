@@ -4,10 +4,12 @@ import { Heart, MapPin, Star, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
+import type { Resort } from "../../types/resort";
+
 
 export function WishlistPage() {
   const { user } = useAuth();
-  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [wishlist, setWishlist] = useState<Resort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function WishlistPage() {
                 <div className="p-8">
                   <div className="flex items-center gap-2 text-gold-600 text-xs font-bold uppercase tracking-widest mb-3">
                     <MapPin className="w-3.5 h-3.5" />
-                    {resort.locationArea}
+                    {resort.location.area}
                   </div>
                   <h3 className="text-2xl font-bold font-serif text-navy-950 mb-2">{resort.name}</h3>
                   <div className="flex items-center gap-4 mb-6">

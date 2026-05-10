@@ -12,7 +12,7 @@ export function Navbar() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { isAuthenticated, logout, user, setShowAuthModal } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
 
   useEffect(() => {
@@ -160,28 +160,29 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <button
-                  onClick={() => setShowAuthModal(true, "login")}
+                <Link
+                  to="/login"
                   className={cn(
                     "text-[13px] uppercase tracking-[0.1em] font-semibold transition-colors duration-300 hover:opacity-70",
                     isScrolled ? "text-navy-900" : "text-white"
                   )}
                 >
                   Log in
-                </button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowAuthModal(true, "register")}
-                  className={cn(
-                    "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
-                    isScrolled 
-                      ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
-                      : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
-                  )}
-                >
-                  Book Now
-                </Button>
+                </Link>
+                <Link to="/register">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className={cn(
+                      "transition-all duration-500 hover:-translate-y-0.5 border-none uppercase tracking-widest text-[11px] font-bold",
+                      isScrolled 
+                        ? "bg-navy-950 text-white hover:bg-gold-500 hover:text-navy-950 shadow-luxury" 
+                        : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-gold-500/90 hover:text-navy-950"
+                    )}
+                  >
+                    Book Now
+                  </Button>
+                </Link>
               </>
             )}
           </div>
@@ -221,25 +222,21 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col gap-4 mt-2">
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setShowAuthModal(true, "login");
-                  }}
-                  className="text-center font-semibold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors"
+                <Link
+                  to="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-center font-semibold text-navy-950 py-4 rounded-2xl border border-sand-200 hover:border-gold-400 transition-colors block"
                 >
                   Log in
-                </button>
-                <Button 
-                  size="lg" 
-                  className="w-full h-16 rounded-2xl border-none transition-colors"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setShowAuthModal(true, "register");
-                  }}
-                >
-                  Register
-                </Button>
+                </Link>
+                <Link to="/register" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button 
+                    size="lg" 
+                    className="w-full h-16 rounded-2xl border-none transition-colors"
+                  >
+                    Register
+                  </Button>
+                </Link>
               </div>
             </div>
           </motion.div>

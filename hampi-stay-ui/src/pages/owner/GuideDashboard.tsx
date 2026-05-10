@@ -5,13 +5,13 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { 
   Users, Calendar, MapPin, Star, Award, TrendingUp, Clock,
   ShieldCheck, Globe, Briefcase, IndianRupee, Plus, Trash2, Camera,
-  CheckCircle2, Settings
+  CheckCircle2, Settings, Loader2
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { ProfileIncompleteBanner } from "../../components/shared/ProfileIncompleteBanner";
 
 export function GuideDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
@@ -22,6 +22,9 @@ export function GuideDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAddingExperience, setIsAddingExperience] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
   
   // Profile Form State
@@ -33,7 +36,8 @@ export function GuideDashboard() {
     languages: [] as string[],
     idType: "",
     idNumber: "",
-    idImage: ""
+    idImage: "",
+    avatar: ""
   });
 
   const [addingSpecialty, setAddingSpecialty] = useState(false);
@@ -49,7 +53,11 @@ export function GuideDashboard() {
     durationHours: "4",
     meetingPoint: "",
     includes: ["Expert Guiding", "Water Bottles"],
+    imageUrl: "",
   });
+  const [isUploadingExpImage, setIsUploadingExpImage] = useState(false);
+  const [uploadingExpId, setUploadingExpId] = useState<string | null>(null);
+  const [isUploadingId, setIsUploadingId] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -63,6 +71,7 @@ export function GuideDashboard() {
       const data = await res.json();
       setProfile(data);
       if (data) {
+        setAvatarPreview(data.user?.avatar || data.avatar || user?.avatar || "");
         setProfileForm({
           bio: data.bio || "",
           pricePerDay: data.pricePerDay?.toString() || "2500",
@@ -71,7 +80,8 @@ export function GuideDashboard() {
           languages: data.languages || [],
           idType: data.idType || "",
           idNumber: data.idNumber || "",
-          idImage: data.idImage || ""
+          idImage: data.idImage || "",
+          avatar: data.user?.avatar || data.avatar || ""
         });
         fetchBookings(data.id);
       }
@@ -85,7 +95,7 @@ export function GuideDashboard() {
   const fetchSystemStatus = async () => {
     try {
       console.log("Fetching system status for guide dashboard...");
-      const res = await fetch("/api/settings");
+      const res = await fetch("http://localhost:5000/api/settings");
       const data = await res.json();
       console.log("System status received:", data);
       setGuideServiceEnabled(data.guideServiceEnabled);
@@ -114,7 +124,8 @@ export function GuideDashboard() {
         body: JSON.stringify(profileForm)
       });
       if (res.ok) {
-        alert("Profile updated successfully!");
+        setShowSaveSuccess(true);
+        setTimeout(() => setShowSaveSuccess(false), 3000);
         fetchProfile();
       }
     } catch (err) {
@@ -145,7 +156,7 @@ export function GuideDashboard() {
       const res = await fetch(`http://localhost:5000/api/guides/${profile.id}/experiences`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newExp)
+        body: JSON.stringify({ ...newExp, images: newExp.imageUrl ? [newExp.imageUrl] : [] })
       });
       if (res.ok) {
         setIsAddingExperience(false);
@@ -157,6 +168,7 @@ export function GuideDashboard() {
           durationHours: "4",
           meetingPoint: "",
           includes: ["Expert Guiding", "Water Bottles"],
+          imageUrl: "",
         });
       }
     } catch (err) {
@@ -205,6 +217,46 @@ export function GuideDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8 space-y-10">
+          {/* Earnings Analytics */}
+          <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-serif font-bold text-navy-950">Earnings Analytics</h2>
+                <p className="text-sm text-navy-950/40 mt-1">Monthly performance and revenue growth.</p>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-sand-50 rounded-xl border border-sand-100 text-[10px] font-bold text-navy-950 uppercase tracking-widest">
+                Last 30 Days <TrendingUp className="w-3 h-3 text-green-600" />
+              </div>
+            </div>
+            <div className="p-10">
+              <div className="flex items-end justify-between h-48 gap-4 px-4">
+                {[
+                  { month: "Jan", val: 45, inc: 12400 },
+                  { month: "Feb", val: 65, inc: 18600 },
+                  { month: "Mar", val: 35, inc: 9200 },
+                  { month: "Apr", val: 85, inc: 24500 },
+                  { month: "May", val: 55, inc: 15800 },
+                  { month: "Jun", val: 95, inc: 28900 },
+                ].map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-4 group cursor-help">
+                    <div className="w-full relative">
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: `${d.val}%` }}
+                        className="w-full bg-sand-100 rounded-2xl group-hover:bg-gold-500 transition-colors relative"
+                      >
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-navy-950 text-white text-[10px] px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl">
+                          ₹{d.inc.toLocaleString()}
+                        </div>
+                      </motion.div>
+                    </div>
+                    <span className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">{d.month}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
             <div className="p-8 border-b border-sand-100">
               <h2 className="text-2xl font-serif font-bold text-navy-950">Upcoming Bookings</h2>
@@ -250,7 +302,10 @@ export function GuideDashboard() {
         </div>
         <div className="lg:col-span-4 space-y-10">
           <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
-            <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Expert Rating</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-serif font-bold text-navy-950">Expert Rating</h3>
+              <Star className="w-5 h-5 text-gold-500 fill-current" />
+            </div>
             <div className="flex items-center gap-4 mb-8">
               <div className="text-5xl font-serif font-bold text-navy-950">{profile?.rating?.toFixed(1) || "4.9"}</div>
               <div>
@@ -259,6 +314,67 @@ export function GuideDashboard() {
                 </div>
                 <p className="text-xs text-navy-950/40 uppercase tracking-widest font-bold">{profile?.reviewCount || 48} reviews</p>
               </div>
+            </div>
+            
+            {/* Rating Breakdown */}
+            <div className="space-y-3">
+              {[5, 4, 3, 2, 1].map(stars => (
+                <div key={stars} className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-navy-950/40 w-2">{stars}</span>
+                  <div className="flex-1 h-1.5 bg-sand-50 rounded-full overflow-hidden border border-sand-100">
+                    <div 
+                      className="h-full bg-gold-500 rounded-full" 
+                      style={{ width: `${stars === 5 ? 85 : stars === 4 ? 10 : 5}%` }} 
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-navy-950/40 w-8">{stars === 5 ? '85%' : stars === 4 ? '10%' : '5%'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Verification Progress */}
+          {profile?.status !== 'APPROVED' && (
+            <div className="bg-navy-950 rounded-[3rem] p-8 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full blur-3xl" />
+              <h4 className="text-lg font-serif font-bold mb-2">Verification Progress</h4>
+              <p className="text-white/40 text-[10px] uppercase tracking-widest font-bold mb-6">Status: {profile?.status}</p>
+              <div className="space-y-4">
+                {[
+                  { label: "Profile Details", done: !!profile?.bio },
+                  { label: "Identity Upload", done: !!profile?.idImage },
+                  { label: "ASI Certificate", done: profile?.isVerified },
+                  { label: "Admin Review", done: false }
+                ].map((step, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border ${step.done ? 'bg-gold-500 border-gold-500' : 'border-white/20'}`}>
+                      {step.done && <CheckCircle2 className="w-3 h-3 text-navy-950" />}
+                    </div>
+                    <span className={`text-xs font-medium ${step.done ? 'text-white' : 'text-white/40'}`}>{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Reviews */}
+          <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
+            <h3 className="text-xl font-serif font-bold text-navy-950 mb-6">Recent Feedback</h3>
+            <div className="space-y-6">
+              {[
+                { name: "John D.", text: "Incredible depth of knowledge about the Vitthala temple architecture.", rating: 5 },
+                { name: "Priya M.", text: "Very professional and patient with our family. Highly recommend!", rating: 5 }
+              ].map((rev, i) => (
+                <div key={i} className="pb-6 border-b border-sand-50 last:border-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-navy-950 text-sm">{rev.name}</span>
+                    <div className="flex gap-0.5 text-gold-500">
+                      {[...Array(rev.rating)].map((_, j) => <Star key={j} className="w-3 h-3 fill-current" />)}
+                    </div>
+                  </div>
+                  <p className="text-xs text-navy-950/50 italic leading-relaxed">"{rev.text}"</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -292,6 +408,42 @@ export function GuideDashboard() {
             <form onSubmit={handleCreateExperience} className="p-10 space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="space-y-6">
+                  {/* Cover Image Upload */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Cover Image</label>
+                    <div className="relative group/img cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setIsUploadingExpImage(true);
+                          const fd = new FormData();
+                          fd.append('image', file);
+                          try {
+                            const r = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: fd });
+                            const d = await r.json();
+                            if (d.url) setNewExp(prev => ({ ...prev, imageUrl: d.url }));
+                          } catch (err) { console.error("Image upload failed", err); }
+                          finally { setIsUploadingExpImage(false); }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="h-44 rounded-2xl bg-sand-50 border-2 border-dashed border-sand-200 group-hover/img:border-gold-500 transition-colors overflow-hidden flex items-center justify-center">
+                        {isUploadingExpImage ? (
+                          <Loader2 className="w-8 h-8 text-gold-500 animate-spin" />
+                        ) : newExp.imageUrl ? (
+                          <img src={newExp.imageUrl} className="w-full h-full object-cover" alt="Tour cover" />
+                        ) : (
+                          <div className="text-center">
+                            <Camera className="w-8 h-8 text-sand-300 mx-auto mb-2" />
+                            <span className="text-[10px] font-bold text-sand-400 uppercase tracking-widest">Click to upload cover photo</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Tour Title</label>
                     <input 
@@ -307,7 +459,7 @@ export function GuideDashboard() {
                     <textarea 
                       required
                       placeholder="Describe the journey and what guests will learn..."
-                      className="w-full p-6 bg-sand-50 rounded-2xl border border-sand-100 min-h-[150px] font-medium text-navy-950 outline-none focus:border-gold-500 transition-colors resize-none"
+                      className="w-full p-6 bg-sand-50 rounded-2xl border border-sand-100 min-h-[120px] font-medium text-navy-950 outline-none focus:border-gold-500 transition-colors resize-none"
                       value={newExp.description}
                       onChange={e => setNewExp({...newExp, description: e.target.value})}
                     />
@@ -371,13 +523,58 @@ export function GuideDashboard() {
             animate={{ opacity: 1, scale: 1 }}
             className="group bg-white rounded-[2.5rem] border border-sand-100 shadow-sm hover:shadow-xl transition-all overflow-hidden"
           >
-            <div className="h-48 bg-sand-100 relative">
-              <div className="absolute inset-0 flex items-center justify-center text-sand-300">
-                <Camera className="w-12 h-12" />
-              </div>
+            {/* Tour Cover Image with click-to-upload */}
+            <div className="h-48 bg-sand-100 relative overflow-hidden">
+              {exp.images?.[0] ? (
+                <img src={exp.images[0]} className="w-full h-full object-cover" alt={exp.title} />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sand-300">
+                  <Camera className="w-10 h-10" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">No Image</span>
+                </div>
+              )}
+              {/* Hover overlay: upload new image */}
+              <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-navy-950/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingExpId(exp.id);
+                    const fd = new FormData();
+                    fd.append('image', file);
+                    try {
+                      const r = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: fd });
+                      const d = await r.json();
+                      if (d.url) {
+                        await fetch(`http://localhost:5000/api/experiences/${exp.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ images: [d.url] })
+                        });
+                        fetchProfile(); // Refresh to show new image
+                      }
+                    } catch (err) { console.error("Image upload failed", err); }
+                    finally { setUploadingExpId(null); }
+                  }}
+                />
+                {uploadingExpId === exp.id ? (
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                ) : (
+                  <>
+                    <Camera className="w-7 h-7 text-white" />
+                    <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                      {exp.images?.[0] ? 'Change Photo' : 'Upload Photo'}
+                    </span>
+                  </>
+                )}
+              </label>
+              {/* Delete button */}
               <button 
                 onClick={() => handleDeleteExperience(exp.id)}
-                className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md rounded-xl text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50"
+                className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md rounded-xl text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 z-20"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -416,6 +613,66 @@ export function GuideDashboard() {
           <h2 className="text-3xl font-serif font-bold text-navy-950 mb-8">Expert Profile Settings</h2>
           
           <div className="space-y-8">
+            {/* Profile Image Upload */}
+            <div className="flex flex-col md:flex-row gap-6 items-center bg-sand-50/50 p-6 rounded-3xl border border-sand-100">
+              <div className="relative group shrink-0 w-24 h-24">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !user) return;
+                    setIsUploadingAvatar(true);
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    try {
+                      // 1. Upload to Cloudinary
+                      const uploadRes = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: formData });
+                      const uploadData = await uploadRes.json();
+                      if (!uploadData.url) throw new Error('Upload failed');
+
+                      // 2. Save avatar URL immediately to the User record
+                      const patchRes = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ avatar: uploadData.url }),
+                      });
+                      await patchRes.json();
+
+                      // 3. Update AuthContext so image shows everywhere instantly
+                      updateUser({ ...user, avatar: uploadData.url });
+
+                      // 4. Update dedicated preview state — this triggers re-render immediately
+                      setAvatarPreview(uploadData.url);
+
+                      // 5. Update local form state too
+                      setProfileForm(prev => ({...prev, avatar: uploadData.url}));
+                    } catch (err) {
+                      console.error("Avatar upload failed", err);
+                    } finally {
+                      setIsUploadingAvatar(false);
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="w-24 h-24 rounded-full bg-white border-2 border-dashed border-sand-200 flex items-center justify-center overflow-hidden group-hover:border-gold-500 transition-colors shadow-sm">
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-7 h-7 text-gold-500 animate-spin" />
+                  ) : avatarPreview ? (
+                    <img src={avatarPreview} className="w-full h-full object-cover" alt="Profile" />
+                  ) : (
+                    <Camera className="w-8 h-8 text-sand-300" />
+                  )}
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gold-500 text-navy-950 rounded-full flex items-center justify-center shadow-md z-20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <Plus className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="text-center md:text-left">
+                <h3 className="font-bold text-navy-950">Profile Picture</h3>
+                <p className="text-xs text-navy-950/40 mt-1">A professional photo helps build trust with luxury travelers.</p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-navy-950/40 ml-1">Daily Rate (8 hrs)</label>
@@ -566,7 +823,20 @@ export function GuideDashboard() {
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-sand-100 flex justify-end">
+          <div className="mt-12 pt-8 border-t border-sand-100 flex justify-end items-center gap-4">
+            <AnimatePresence>
+              {showSaveSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2.5 rounded-xl border border-green-100"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">Saved Successfully</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <Button onClick={handleSaveProfile} isLoading={isSavingProfile} className="rounded-2xl px-12 h-14 shadow-luxury">Save Profile</Button>
           </div>
         </div>
@@ -608,18 +878,22 @@ export function GuideDashboard() {
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
+                    setIsUploadingId(true);
                     const formData = new FormData();
                     formData.append('image', file);
                     try {
                       const res = await fetch('http://localhost:5000/api/upload', { method: 'POST', body: formData });
                       const data = await res.json();
-                      setProfileForm({...profileForm, idImage: data.url});
+                      if (data.url) setProfileForm({...profileForm, idImage: data.url});
                     } catch (err) { console.error("Upload failed", err); }
+                    finally { setIsUploadingId(false); }
                   }}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
                 <div className="h-32 rounded-2xl bg-sand-50 border-2 border-dashed border-sand-200 flex flex-center items-center justify-center overflow-hidden group-hover:border-gold-500 transition-colors">
-                  {profileForm.idImage ? (
+                  {isUploadingId ? (
+                    <Loader2 className="w-8 h-8 text-gold-500 animate-spin" />
+                  ) : profileForm.idImage ? (
                     <img src={profileForm.idImage} className="w-full h-full object-cover" />
                   ) : (
                     <div className="text-center">
@@ -739,17 +1013,27 @@ export function GuideDashboard() {
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-4 shadow-sm"
-            >
-              <Award className="w-3 h-3" /> Hampi Expert Dashboard
-            </motion.div>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950">
-              Welcome back, <span className="text-gold-600">{user?.name.split(' ')[0]}</span>
-            </h1>
+          <div className="flex items-center gap-6">
+            {/* Live Avatar — updates immediately on upload */}
+            <div className="w-20 h-20 rounded-3xl bg-white border-2 border-sand-200 overflow-hidden flex items-center justify-center shadow-sm shrink-0">
+              {avatarPreview ? (
+                <img src={avatarPreview} className="w-full h-full object-cover" alt="Profile" />
+              ) : (
+                <span className="text-3xl font-serif font-bold text-navy-950">{user?.name.charAt(0)}</span>
+              )}
+            </div>
+            <div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-navy-100 text-navy-600 text-[10px] font-bold uppercase tracking-widest mb-2 shadow-sm"
+              >
+                <Award className="w-3 h-3" /> Hampi Expert Dashboard
+              </motion.div>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950">
+                Welcome back, <span className="text-gold-600">{user?.name.split(' ')[0]}</span>
+              </h1>
+            </div>
           </div>
           <div className="flex flex-wrap gap-4">
             <Link to="/guide">

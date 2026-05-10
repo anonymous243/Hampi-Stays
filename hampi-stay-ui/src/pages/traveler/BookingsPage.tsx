@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, MapPin, Download, Clock,
@@ -9,20 +10,21 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
+import type { Booking } from "../../types/booking";
+
 
 export function BookingsPage() {
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [showReview, setShowReview] = useState<string | null>(null);
   const [reviewData, setReviewData] = useState({ rating: 5, comment: "" });
   const [activeTab, setActiveTab] = useState<"upcoming" | "completed" | "cancelled">("upcoming");
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     if (!user) return;
     try {
-      setIsLoading(true);
       const response = await fetch(`http://localhost:5000/api/users/${user.id}/bookings`);
       if (response.ok) {
         const data = await response.json();
@@ -33,11 +35,11 @@ export function BookingsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchBookings();
-  }, [user]);
+  }, [fetchBookings]);
 
   const now = new Date();
   const upcoming = bookings.filter(b => new Date(b.checkIn) >= now && b.status !== "CANCELLED");
@@ -94,7 +96,7 @@ export function BookingsPage() {
     }
   };
 
-  const handleDownloadInvoice = (booking: any) => {
+  const handleDownloadInvoice = (booking: Booking) => {
     const safeRef = booking.referenceNumber || "HS-STAY";
     const filename = `HampiStays_Invoice_${safeRef}.txt`;
 

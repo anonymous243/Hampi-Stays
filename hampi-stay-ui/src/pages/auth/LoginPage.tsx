@@ -19,10 +19,11 @@ export function LoginPage() {
   const navigate = useNavigate();
   
   const hampiImages = [
-    "/images/hampi-2.png", // Virupaksha Temple
     "/images/hampi-1.png", // Stone Chariot
+    "/images/hampi-2.png", // Virupaksha Temple
+    "/images/hampi-3.png", // Boulders
     "/images/hampi-4.png", // Lotus Mahal
-    "/images/hampi-3.png"  // Boulders
+    "/images/auth-bg.png"  // Serene Dawn Landscape
   ];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -84,10 +85,18 @@ export function LoginPage() {
     show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-x-hidden">
-      {/* Left Panel: Cinematic Image */}
-      <div className="relative w-full md:w-1/2 h-[40vh] md:h-auto md:flex-1 overflow-hidden rounded-[15px] shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-sand-50 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+      <div className="w-full max-w-[1400px] md:h-[800px] flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8">
+        {/* Left Panel: Cinematic Image */}
+        <div className="relative w-full md:w-1/2 h-[40vh] md:h-full overflow-hidden rounded-[3rem] shadow-2xl">
         <AnimatePresence>
           <motion.img
             key={currentImageIndex}
@@ -97,31 +106,64 @@ export function LoginPage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
             alt="Scenic Hampi"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
         </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
         <div className="absolute inset-0 bg-navy-950/20" />
         
-        <div className="absolute bottom-10 left-10 right-10 text-white z-10 hidden md:block">
+        {/* Carousel Indicators */}
+        <div className="absolute top-8 left-10 flex gap-2 z-20">
+          {hampiImages.map((_, idx) => (
+            <div key={idx} className="h-[2px] w-8 rounded-full bg-white/20 overflow-hidden backdrop-blur-sm">
+              <motion.div
+                className="h-full bg-gold-400"
+                initial={{ width: "0%" }}
+                animate={{ width: currentImageIndex === idx ? "100%" : currentImageIndex > idx ? "100%" : "0%" }}
+                transition={{ duration: currentImageIndex === idx ? 3 : 0.3, ease: "linear" }}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="absolute bottom-12 left-10 right-10 text-white z-10 hidden md:block">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+            transition={{ duration: 0.9, delay: 0.4 }}
           >
-            <h2 className="text-4xl font-serif font-bold mb-4 leading-tight text-shadow-lg">
+            {/* Decorative pill */}
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 mb-6">
+              <span className="w-2 h-2 rounded-full bg-gold-400 animate-pulse" />
+              <span className="text-sand-100 text-xs font-semibold tracking-widest uppercase">
+                Hampi, Karnataka
+              </span>
+            </div>
+
+            <h2 className="text-5xl font-serif font-bold mb-4 leading-tight">
               Return to your <br />
-              <span className="text-gold-400 italic">Sanctuary</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold-300 via-gold-100 to-gold-500 italic drop-shadow-sm">Sanctuary</span>
             </h2>
-            <p className="text-sand-100/90 max-w-md leading-relaxed text-shadow-md">
-              Sign in to manage your luxury experiences, upcoming stays, and exclusive member benefits.
-            </p>
+
+            {/* Stats row */}
+            <div className="flex gap-6 mt-6">
+              {[
+                { value: "200+", label: "Resorts" },
+                { value: "10k+", label: "Guests" },
+                { value: "4.9★", label: "Rating" },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p className="text-xl font-bold text-white">{stat.value}</p>
+                  <p className="text-[10px] text-sand-200 font-medium mt-0.5">{stat.label}</p>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </div>
       </div>
 
       {/* Right Panel: Glassmorphism Form */}
-      <div className="relative w-full md:w-1/2 h-[60vh] md:h-auto md:flex-1 flex flex-col items-center p-6 md:p-12 lg:p-24 z-10 bg-white/40 backdrop-blur-md rounded-[15px] border border-white/20 overflow-y-auto">
+      <div className="relative w-full md:w-1/2 h-[60vh] md:h-full flex flex-col items-center p-6 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
         {/* Ambient warm orbs */}
         <div className="absolute top-1/4 right-1/4 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-gold-200/30 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-float-slow" />
         <div className="absolute bottom-1/4 left-1/4 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-sand-300/30 rounded-full blur-[70px] md:blur-[100px] pointer-events-none animate-float" />
@@ -131,25 +173,25 @@ export function LoginPage() {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="w-full bg-sand-100/90 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-luxury border border-sand-200/50 relative"
+            className="w-full bg-sand-100/90 backdrop-blur-2xl p-6 md:p-10 rounded-[3rem] shadow-luxury border border-sand-200/50 relative"
           >
             {/* Back button */}
-            <Link to="/" className="absolute top-8 left-8 text-navy-800/40 hover:text-navy-950 transition-colors">
+            <Link to="/" className="absolute top-6 left-6 text-navy-800/40 hover:text-navy-950 transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </Link>
 
-            <motion.div variants={itemVariant} className="flex justify-center mb-8 mt-4">
+            <motion.div variants={itemVariant} className="flex justify-center mb-4 mt-2">
               <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
-                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-14 w-auto object-contain drop-shadow-md" />
+                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
               </Link>
             </motion.div>
 
-            <motion.div variants={itemVariant} className="text-center mb-10">
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-navy-950 mb-3">Welcome Back</h1>
-              <p className="text-xs md:text-sm text-navy-800/60 font-medium">Please enter your details to sign in.</p>
+            <motion.div variants={itemVariant} className="text-center mb-6">
+              <h1 className="text-xl md:text-2xl font-serif font-bold text-navy-950 mb-2 capitalize">{getGreeting()}</h1>
+              <p className="text-[10px] md:text-xs text-navy-800/60 font-medium">Welcome back to your exclusive retreat.</p>
               {error && (
                 <p className={cn(
-                  "text-sm font-bold mt-4 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2",
+                  "text-xs font-bold mt-3 p-3 rounded-xl border animate-in fade-in slide-in-from-top-2",
                   error.includes("New to HampiStays") 
                     ? "bg-amber-50 text-amber-700 border-amber-200 shadow-sm" 
                     : "bg-red-50 text-red-500 border-red-100"
@@ -159,7 +201,7 @@ export function LoginPage() {
               )}
             </motion.div>
 
-            <motion.form variants={itemVariant} className="space-y-4" onSubmit={handleLogin}>
+            <motion.form variants={itemVariant} className="space-y-3" onSubmit={handleLogin}>
               <Input 
                 label="Email Address" 
                 type="email" 
@@ -175,43 +217,43 @@ export function LoginPage() {
                 required 
               />
 
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-1">
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" className="w-4 h-4 rounded border-sand-300 text-gold-500 focus:ring-gold-400 transition-colors" />
-                  <span className="text-sm font-medium text-navy-800/60 group-hover:text-navy-950 transition-colors">Remember me</span>
+                  <input type="checkbox" className="w-3 h-3 rounded border-sand-300 text-gold-500 focus:ring-gold-400 transition-colors" />
+                  <span className="text-[10px] font-medium text-navy-800/60 group-hover:text-navy-950 transition-colors">Remember me</span>
                 </label>
-                <Link to="/forgot-password" className="text-sm font-bold text-gold-600 hover:text-sunset-500 transition-colors">
+                <Link to="/forgot-password" className="text-[10px] font-bold text-gold-600 hover:text-sunset-500 transition-colors">
                   Forgot password?
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full h-14 text-lg mt-4 shadow-gold" isLoading={isLoading}>
+              <Button type="submit" className="w-full h-12 text-base mt-2 shadow-gold" isLoading={isLoading}>
                 Sign In
               </Button>
             </motion.form>
 
-            <motion.div variants={itemVariant} className="mt-10">
-              <div className="relative flex items-center py-5">
+            <motion.div variants={itemVariant} className="mt-6">
+              <div className="relative flex items-center py-3">
                 <div className="flex-grow border-t border-sand-200"></div>
-                <span className="flex-shrink-0 mx-4 text-navy-800/40 text-sm font-bold uppercase tracking-widest">Or continue with</span>
+                <span className="flex-shrink-0 mx-4 text-navy-800/40 text-[10px] font-bold uppercase tracking-widest">Or</span>
                 <div className="flex-grow border-t border-sand-200"></div>
               </div>
 
-              <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-2 scale-90">
                 <GoogleLogin
                   onSuccess={onGoogleSuccess}
                   onError={onGoogleError}
                   theme="filled_blue"
                   shape="pill"
-                  size="large"
+                  size="medium"
                   text="continue_with"
                   width="100%"
                 />
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariant} className="text-center mt-10">
-              <p className="text-navy-800/60 font-medium">
+            <motion.div variants={itemVariant} className="text-center mt-6">
+              <p className="text-xs text-navy-800/60 font-medium">
                 Don't have an account?{" "}
                 <Link to="/register" className="text-gold-600 font-bold hover:text-sunset-500 transition-colors">
                   Sign up
@@ -220,6 +262,7 @@ export function LoginPage() {
             </motion.div>
           </motion.div>
         </div>
+      </div>
       </div>
     </div>
   );

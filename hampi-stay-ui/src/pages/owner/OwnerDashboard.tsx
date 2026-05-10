@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Building2, Plus, Calendar as CalIcon, Settings,
+  Building2, Plus, Calendar as CalIcon,
   Trash2, CheckCircle, AlertCircle, Loader2,
-  IndianRupee, CalendarCheck, Users, TrendingUp, ChevronRight, X
+  IndianRupee, CalendarCheck, Users, TrendingUp, ChevronRight, X, Mail, Star, User
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../../components/ui/Button";
@@ -19,7 +19,7 @@ export function OwnerDashboard() {
   const [activeResortIdx, setActiveResortIdx] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddRoom, setShowAddRoom] = useState(false);
-  const [isAddingRoom, setIsAddingRoom] = useState(false);
+  const [isAddingRoom, setIsLoadingAddingRoom] = useState(false);
   const [roomFormData, setRoomFormData] = useState({
     name: "",
     description: "",
@@ -31,6 +31,18 @@ export function OwnerDashboard() {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
   const [showBookingsModal, setShowBookingsModal] = useState(false);
+  const [activeMessageBooking, setActiveMessageBooking] = useState<any | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("RECEPTIONIST");
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
+  const [housekeeping, setHousekeeping] = useState([
+    { id: '1', room: '101', type: 'Heritage Suite', status: 'DIRTY', color: 'bg-red-500', lastCleaned: '2h ago', staff: 'Unassigned' },
+    { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
+    { id: '3', room: '202', type: 'Garden Villa', status: 'READY', color: 'bg-emerald-500', lastCleaned: 'Just now', staff: 'Sanjay K.' }
+  ]);
 
   const fetchResorts = async () => {
     if (!user) return;
@@ -68,7 +80,7 @@ export function OwnerDashboard() {
   const handleAddRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resort) return;
-    setIsAddingRoom(true);
+    setIsLoadingAddingRoom(true);
     try {
       const response = await fetch(`http://localhost:5000/api/resorts/${resort.id}/rooms`, {
         method: "POST",
@@ -88,7 +100,7 @@ export function OwnerDashboard() {
     } catch (error) {
       console.error(error);
     } finally {
-      setIsAddingRoom(false);
+      setIsLoadingAddingRoom(false);
     }
   };
 
@@ -140,11 +152,70 @@ Verified by HampiStays Partner Network.
     URL.revokeObjectURL(url);
   };
 
-  const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject') => {
+
+
+  const fetchStaffData = async () => {
+    if (!resorts.length) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/${action}`, {
+      const res = await fetch(`/api/admin/staff/invitations/${resorts[0].id}`);
+      if (res.ok) setPendingInvitations(await res.json());
+    } catch (error) {
+      console.error("Failed to fetch staff data:", error);
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if (!inviteEmail || !resorts.length) return;
+    try {
+      const res = await fetch('/api/admin/staff/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: inviteRole,
+          resortId: resorts[0].id
+        })
+      });
+      if (res.ok) {
+        setInviteEmail("");
+        setIsInviteModalOpen(false);
+        fetchStaffData();
+      }
+    } catch (error) {
+      console.error("Failed to send invite:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (resorts.length) fetchStaffData();
+  }, [resorts]);
+
+  const handleHousekeepingStatus = (id: string) => {
+    const statusCycle: Record<string, { next: string; color: string }> = {
+      'DIRTY': { next: 'CLEANING', color: 'bg-blue-500' },
+      'CLEANING': { next: 'READY', color: 'bg-emerald-500' },
+      'READY': { next: 'DIRTY', color: 'bg-red-500' }
+    };
+    
+    setHousekeeping(prev => prev.map(item => {
+      if (item.id === id) {
+        const nextState = statusCycle[item.status];
+        return { ...item, status: nextState.next, color: nextState.color, lastCleaned: 'Just now' };
+      }
+      return item;
+    }));
+  };
+
+  const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject' | 'checkin' | 'checkout') => {
+    try {
+      const endpoint = action === 'confirm' || action === 'reject' 
+        ? `/api/bookings/${bookingId}/${action}`
+        : `/api/bookings/${bookingId}/status`;
+      
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
+        body: action === 'checkin' || action === 'checkout' ? JSON.stringify({ status: action === 'checkin' ? 'CHECKED_IN' : 'COMPLETED' }) : undefined
       });
       if (response.ok) {
         fetchResorts();
@@ -155,6 +226,47 @@ Verified by HampiStays Partner Network.
       console.error("Network error:", error);
     }
   };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !activeMessageBooking) return;
+    
+    try {
+      const response = await fetch("http://localhost:5000/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: newMessage,
+          senderId: user?.id,
+          bookingId: activeMessageBooking.id
+        })
+      });
+      if (response.ok) {
+        const savedMsg = await response.json();
+        setMessages(prev => [...prev, savedMsg]);
+        setNewMessage("");
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTab === 'inbox' && activeMessageBooking) {
+      const fetchMessages = async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/api/messages/${activeMessageBooking.id}`);
+          if (res.ok) setMessages(await res.json());
+        } catch (err) {
+          console.error("Poll failed", err);
+        }
+      };
+      fetchMessages();
+      interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+    }
+    return () => clearInterval(interval);
+  }, [activeTab, activeMessageBooking]);
 
   if (isLoading) {
     return (
@@ -253,10 +365,17 @@ Verified by HampiStays Partner Network.
             </Button>
             <Button 
               variant="outline" 
-              className="rounded-xl border-sand-200 text-navy-950 whitespace-nowrap"
-              onClick={() => navigate("/dashboard?tab=settings")}
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "staff" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=staff")}
             >
-              <Settings className="w-4 h-4 mr-2" /> Settings
+              <Users className="w-4 h-4 mr-2" /> Staff & Ops
+            </Button>
+            <Button 
+              variant="outline" 
+              className={cn("rounded-xl border-sand-200 text-navy-950 whitespace-nowrap", activeTab === "analytics" && "bg-navy-950 text-white")}
+              onClick={() => navigate("/dashboard?tab=analytics")}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" /> Analytics
             </Button>
             <Button className="rounded-xl shadow-gold whitespace-nowrap" onClick={() => navigate("/dashboard/resort-setup")}>
               <Plus className="w-4 h-4 mr-2" /> Add Property
@@ -400,159 +519,212 @@ Verified by HampiStays Partner Network.
         {/* Tabs Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Content Area */}
-          <div className={cn("lg:col-span-8 space-y-10", activeTab === "overview" ? "block" : "hidden lg:block")}>
+          <div className={cn("lg:col-span-12 space-y-10")}>
             {(activeTab === "overview" || activeTab === "properties") && (
-              <>
-                {/* Room Inventory */}
-                <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-                  <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-serif font-bold text-navy-950">Room Inventory</h2>
-                      <p className="text-sm text-navy-950/40 mt-1">Manage your room types, pricing and availability.</p>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="lg:col-span-8 space-y-10">
+                  {/* Room Inventory */}
+                  <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+                    <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-serif font-bold text-navy-950">Room Inventory</h2>
+                        <p className="text-sm text-navy-950/40 mt-1">Manage your room types, pricing and availability.</p>
+                      </div>
+                      <Button size="sm" className="rounded-xl px-5" onClick={() => setShowAddRoom(true)}>
+                        <Plus className="w-4 h-4 mr-2" /> Add Room Type
+                      </Button>
                     </div>
-                    <Button size="sm" className="rounded-xl px-5" onClick={() => setShowAddRoom(true)}>
-                      <Plus className="w-4 h-4 mr-2" /> Add Room Type
-                    </Button>
-                  </div>
 
-                  <div className="p-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {resort.roomTypes?.map((room: any) => (
-                        <div key={room.id} className="p-6 rounded-[2.5rem] border-2 border-sand-50 bg-sand-50/30 hover:border-gold-200 transition-all group">
-                          <div className="flex items-start justify-between mb-4">
-                            <h4 className="text-xl font-bold text-navy-950">{room.name}</h4>
-                            <span className="text-gold-600 font-bold">₹{room.pricePerNight?.toLocaleString()}</span>
-                          </div>
-                          <p className="text-sm text-navy-950/50 mb-6 line-clamp-2 italic">{room.description}</p>
-                          <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-navy-950/40">
-                            <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Max {room.capacity}</span>
-                            <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> {room.availableCount} Available</span>
-                          </div>
-                          
-                          {/* Room Photos Manager */}
-                          <div className="mt-6 pt-6 border-t border-sand-100">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-navy-950/30 mb-3">Room Gallery</p>
-                            <div className="flex flex-wrap gap-2">
-                              {room.images?.map((img: string, i: number) => (
-                                <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
-                                  <img src={img} className="w-full h-full object-cover" />
-                                  <button 
-                                    onClick={async () => {
-                                      if (window.confirm("Delete this room photo?")) {
-                                        try {
-                                          await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
-                                            method: "DELETE",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ url: img })
-                                          });
-                                          fetchResorts();
-                                        } catch (err) { alert("Error deleting photo"); }
-                                      }
-                                    }}
-                                    className="absolute inset-0 bg-red-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-white" />
-                                  </button>
-                                </div>
-                              ))}
-                              <label className="w-16 h-16 rounded-lg border-2 border-dashed border-sand-200 flex items-center justify-center text-navy-950/20 hover:border-gold-300 hover:text-gold-500 transition-all cursor-pointer">
-                                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const reader = new FileReader();
-                                  reader.onloadend = async () => {
-                                    try {
-                                      const r1 = await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ url: reader.result as string })
-                                      });
-                                      if (r1.ok) {
-                                        fetchResorts();
-                                      } else {
-                                        if (r1.status === 413) {
-                                          alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image.");
-                                        } else {
-                                          alert("Failed to upload room photo. Server returned status: " + r1.status);
+                    <div className="p-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {resort.roomTypes?.map((room: any) => (
+                          <div key={room.id} className="p-6 rounded-[2.5rem] border-2 border-sand-50 bg-sand-50/30 hover:border-gold-200 transition-all group">
+                            <div className="flex items-start justify-between mb-4">
+                              <h4 className="text-xl font-bold text-navy-950">{room.name}</h4>
+                              <span className="text-gold-600 font-bold">₹{room.pricePerNight?.toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm text-navy-950/50 mb-6 line-clamp-2 italic">{room.description}</p>
+                            <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-navy-950/40">
+                              <span className="flex items-center gap-2"><Users className="w-4 h-4" /> Max {room.capacity}</span>
+                              <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> {room.availableCount} Available</span>
+                            </div>
+                            
+                            {/* Room Photos Manager */}
+                            <div className="mt-6 pt-6 border-t border-sand-100">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-navy-950/30 mb-3">Room Gallery</p>
+                              <div className="flex flex-wrap gap-2">
+                                {room.images?.map((img: string, i: number) => (
+                                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
+                                    <img src={img} className="w-full h-full object-cover" />
+                                    <button 
+                                      onClick={async () => {
+                                        if (window.confirm("Delete this room photo?")) {
+                                          try {
+                                            await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
+                                              method: "DELETE",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ url: img })
+                                            });
+                                            fetchResorts();
+                                          } catch (err) { alert("Error deleting photo"); }
                                         }
+                                      }}
+                                      className="absolute inset-0 bg-red-600/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                    >
+                                      <Trash2 className="w-4 h-4 text-white" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <label className="w-16 h-16 rounded-lg border-2 border-dashed border-sand-200 flex items-center justify-center text-navy-950/20 hover:border-gold-300 hover:text-gold-500 transition-all cursor-pointer">
+                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onloadend = async () => {
+                                      try {
+                                        const r1 = await fetch(`http://localhost:5000/api/rooms/${room.id}/photos`, {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ url: reader.result as string })
+                                        });
+                                        if (r1.ok) {
+                                          fetchResorts();
+                                        } else {
+                                          if (r1.status === 413) {
+                                            alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image.");
+                                          } else {
+                                            alert("Failed to upload room photo. Server returned status: " + r1.status);
+                                          }
+                                        }
+                                      } catch(err) {
+                                        alert("Network error: Make sure your backend server is running on port 5000!");
                                       }
-                                    } catch(err) {
-                                      alert("Network error: Make sure your backend server is running on port 5000!");
-                                    }
-                                  };
-                                  reader.readAsDataURL(file);
-                                }} />
-                                <Plus className="w-5 h-5" />
-                              </label>
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }} />
+                                  <Plus className="w-5 h-5" />
+                                </label>
+                              </div>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Property Gallery */}
+                  <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
+                    <div className="p-8 border-b border-sand-100 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold font-serif text-navy-950">Property Gallery</h3>
+                        <p className="text-sm text-navy-950/40 mt-1">Manage the high-resolution photos shown to guests.</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors bg-navy-950 text-white hover:bg-navy-900/90 h-10 px-4 cursor-pointer disabled:opacity-50 disabled:pointer-events-none">
+                          <input type="file" accept="image/*" className="hidden" disabled={isUpdatingResortPhotos} onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setIsUpdatingResortPhotos(true);
+                            const reader = new FileReader();
+                            reader.onloadend = async () => {
+                              try {
+                                const res = await fetch(`http://localhost:5000/api/resorts/${resort.id}/photos`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ url: reader.result as string })
+                                });
+                                if (res.ok) {
+                                  fetchResorts();
+                                } else {
+                                  if (res.status === 413) {
+                                    alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image (under 100kb).");
+                                  } else {
+                                    alert("Failed to upload image. Server returned status: " + res.status);
+                                  }
+                                }
+                              } catch(err) {
+                                alert("Network error: Make sure your backend server is running on port 5000!");
+                              } finally {
+                                setIsUpdatingResortPhotos(false);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }} />
+                          {isUpdatingResortPhotos ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Add Photo"}
+                        </label>
+                      </div>
+                    </div>
+                    <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {resort.images?.map((img: string, i: number) => (
+                        <div key={i} className="relative aspect-[4/3] rounded-2xl overflow-hidden group">
+                          <img src={img} className="w-full h-full object-cover" />
+                          <button 
+                            onClick={() => {
+                              if (window.confirm("Delete this property photo?")) {
+                                handleDeletePhoto(resort.id, img);
+                              }
+                            }} 
+                            className="absolute top-3 right-3 p-2.5 bg-white/90 rounded-xl text-red-500 shadow-lg transition-all hover:bg-red-500 hover:text-white"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* Property Gallery */}
-                <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm overflow-hidden">
-                  <div className="p-8 border-b border-sand-100 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold font-serif text-navy-950">Property Gallery</h3>
-                      <p className="text-sm text-navy-950/40 mt-1">Manage the high-resolution photos shown to guests.</p>
+                <div className="lg:col-span-4 space-y-10">
+                  {/* Recent Activity */}
+                  <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
+                    <div className="flex items-center justify-between mb-8">
+                      <h3 className="text-xl font-serif font-bold text-navy-950">Recent Stays</h3>
+                      <button onClick={() => setShowBookingsModal(true)} className="text-xs font-bold text-gold-600 uppercase tracking-widest hover:text-gold-700">View All</button>
                     </div>
-                    <div className="flex gap-2">
-                      <label className="inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium transition-colors bg-navy-950 text-white hover:bg-navy-900/90 h-10 px-4 cursor-pointer disabled:opacity-50 disabled:pointer-events-none">
-                        <input type="file" accept="image/*" className="hidden" disabled={isUpdatingResortPhotos} onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setIsUpdatingResortPhotos(true);
-                          const reader = new FileReader();
-                          reader.onloadend = async () => {
-                            try {
-                              const res = await fetch(`http://localhost:5000/api/resorts/${resort.id}/photos`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ url: reader.result as string })
-                              });
-                              if (res.ok) {
-                                fetchResorts();
-                              } else {
-                                if (res.status === 413) {
-                                  alert("Image is too large! Please restart the backend server so the new 50MB limit takes effect, or use a smaller image (under 100kb).");
-                                } else {
-                                  alert("Failed to upload image. Server returned status: " + res.status);
-                                }
-                              }
-                            } catch(err) {
-                              alert("Network error: Make sure your backend server is running on port 5000!");
-                            } finally {
-                              setIsUpdatingResortPhotos(false);
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }} />
-                        {isUpdatingResortPhotos ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Add Photo"}
-                      </label>
+                    <div className="space-y-6">
+                      {(resort.bookings?.length > 0 ? resort.bookings : []).slice(0, 4).map((booking: any) => (
+                        <div key={booking.id} className="flex items-center gap-4 group cursor-pointer">
+                          <div className="w-12 h-12 rounded-2xl bg-sand-50 flex items-center justify-center font-bold text-navy-950 border border-sand-100 group-hover:border-gold-300 transition-all">
+                            {booking.user?.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-grow">
+                            <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
+                            <p className="text-[10px] text-navy-950/40 uppercase tracking-widest">
+                              {new Date(booking.checkIn).toLocaleDateString()} • {booking.status}
+                            </p>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-sand-300 group-hover:text-gold-500 transition-all" />
+                        </div>
+                      ))}
+                      {(!resort.bookings || resort.bookings.length === 0) && (
+                        <div className="text-center py-6 text-navy-950/30 italic text-sm">No bookings yet</div>
+                      )}
                     </div>
                   </div>
-                  <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {resort.images?.map((img: string, i: number) => (
-                      <div key={i} className="relative aspect-[4/3] rounded-2xl overflow-hidden group">
-                        <img src={img} className="w-full h-full object-cover" />
-                        <button 
-                          onClick={() => {
-                            if (window.confirm("Delete this property photo?")) {
-                              handleDeletePhoto(resort.id, img);
-                            }
-                          }} 
-                          className="absolute top-3 right-3 p-2.5 bg-white/90 rounded-xl text-red-500 shadow-lg transition-all hover:bg-red-500 hover:text-white"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+
+                  {/* Meal Packages Display */}
+                  <div className="bg-navy-950 rounded-[3rem] p-8 text-white">
+                    <h3 className="text-xl font-serif font-bold mb-6">Meal Packages</h3>
+                    <div className="space-y-4">
+                      {(resort.mealPackages || []).map((pkg: any, i: number) => (
+                        <div key={i} className="p-4 rounded-2xl border border-white/10 bg-white/5">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="font-bold">{pkg.name}</p>
+                            <span className="text-gold-400 font-bold">₹{pkg.price}</span>
+                          </div>
+                          <p className="text-[10px] text-white/40 italic">{pkg.description}</p>
+                        </div>
+                      ))}
+                      {(!resort.mealPackages || resort.mealPackages.length === 0) && (
+                        <p className="text-xs text-white/30 italic text-center py-4">No meal packages defined</p>
+                      )}
+                      <Button variant="outline" className="w-full rounded-xl border-white/20 text-white hover:bg-white hover:text-navy-950 mt-4">
+                        Manage Dining
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
 
             {activeTab === "bookings" && (
@@ -598,6 +770,459 @@ Verified by HampiStays Partner Network.
               </div>
             )}
 
+            {activeTab === "staff" && (
+              <div className="space-y-8">
+                {/* Staff Management Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                   <div>
+                      <h2 className="text-2xl font-serif font-bold text-navy-950">Staff & Operations</h2>
+                      <p className="text-sm text-navy-950/40 mt-1">Manage your team and daily resort operations.</p>
+                   </div>
+                   <div className="flex gap-3">
+                      <Button onClick={() => setIsInviteModalOpen(true)} className="rounded-xl px-6 h-12 shadow-gold">
+                         <Plus className="w-4 h-4 mr-2" /> Invite Staff
+                      </Button>
+                   </div>
+                </div>
+
+                {/* Invite Modal */}
+                {isInviteModalOpen && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/40 backdrop-blur-sm">
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-white rounded-[2.5rem] p-10 max-w-md w-full shadow-luxury border border-sand-200"
+                    >
+                      <h3 className="text-2xl font-serif font-bold text-navy-950 mb-2">Invite Team Member</h3>
+                      <p className="text-sm text-navy-950/40 mb-8 italic">Send a secure role-based invitation code.</p>
+                      
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Email Address</label>
+                          <input 
+                            type="email" 
+                            value={inviteEmail}
+                            onChange={(e) => setInviteEmail(e.target.value)}
+                            placeholder="staff@hampistays.com"
+                            className="w-full bg-sand-50 border border-sand-200 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-gold-500 transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-widest text-navy-950/40 mb-2">Assigned Role</label>
+                          <select 
+                            value={inviteRole}
+                            onChange={(e) => setInviteRole(e.target.value)}
+                            className="w-full bg-sand-50 border border-sand-200 rounded-2xl px-6 py-4 text-sm focus:outline-none focus:border-gold-500 transition-colors appearance-none"
+                          >
+                            <option value="RECEPTIONIST">Receptionist</option>
+                            <option value="MANAGER">Manager</option>
+                            <option value="HOUSEKEEPING">Housekeeping</option>
+                          </select>
+                        </div>
+                        <div className="flex gap-4 pt-4">
+                          <Button variant="outline" onClick={() => setIsInviteModalOpen(false)} className="flex-1 h-14 rounded-2xl">Cancel</Button>
+                          <Button onClick={handleSendInvite} className="flex-1 h-14 rounded-2xl shadow-gold">Send Invitation</Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                   {/* Staff List */}
+                   <div className="lg:col-span-7 space-y-6">
+                      <div className="bg-white rounded-[2.5rem] border border-sand-100 shadow-sm overflow-hidden">
+                         <div className="p-8 border-b border-sand-100">
+                            <h3 className="text-lg font-bold text-navy-950">Active Team</h3>
+                         </div>
+                         <div className="divide-y divide-sand-50">
+                            {[
+                               { name: 'Sanjay Kumar', role: 'General Manager', email: 'sanjay@hampi.com', status: 'Active' },
+                               { name: 'Priya Das', role: 'Receptionist', email: 'priya@hampi.com', status: 'On Shift' }
+                            ].map((member, i) => (
+                               <div key={i} className="p-6 flex items-center justify-between hover:bg-sand-50 transition-colors">
+                                  <div className="flex items-center gap-4">
+                                     <div className="w-12 h-12 rounded-2xl bg-sand-100 flex items-center justify-center font-bold text-navy-950">
+                                        {member.name[0]}
+                                     </div>
+                                     <div>
+                                        <p className="text-sm font-bold text-navy-950">{member.name}</p>
+                                        <p className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{member.role}</p>
+                                     </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                     <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                        {member.status}
+                                     </span>
+                                     <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg">
+                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                     </Button>
+                                  </div>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+
+                      {/* Pending Invitations */}
+                      {pendingInvitations.length > 0 && (
+                        <div className="bg-white rounded-[2.5rem] border border-sand-100 shadow-sm overflow-hidden mt-8">
+                           <div className="p-8 border-b border-sand-100 flex items-center justify-between bg-sand-50/30">
+                              <h3 className="text-sm font-bold text-navy-950 uppercase tracking-widest">Pending Invitations</h3>
+                              <span className="w-6 h-6 bg-gold-100 text-gold-700 rounded-full flex items-center justify-center text-[10px] font-bold">{pendingInvitations.length}</span>
+                           </div>
+                           <div className="divide-y divide-sand-50">
+                              {pendingInvitations.map((invite: any, i: number) => (
+                                 <div key={i} className="p-6 flex items-center justify-between">
+                                    <div>
+                                       <p className="text-sm font-bold text-navy-950">{invite.email}</p>
+                                       <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-[10px] text-navy-950/40 font-bold uppercase tracking-widest">{invite.role}</span>
+                                          <span className="text-[10px] text-gold-600 font-mono font-bold tracking-widest">[{invite.code}]</span>
+                                       </div>
+                                    </div>
+                                    <span className="px-3 py-1 bg-sand-100 text-navy-950/40 rounded-full text-[9px] font-bold uppercase tracking-widest animate-pulse">
+                                       Waiting...
+                                    </span>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                      )}
+                   </div>
+
+                   {/* Housekeeping Board */}
+                   <div className="lg:col-span-5 space-y-6">
+                      <div className="bg-navy-950 rounded-[2.5rem] p-8 text-white">
+                         <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-lg font-bold text-gold-400">Housekeeping</h3>
+                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Live Status</span>
+                         </div>
+                         <div className="space-y-4">
+                            {housekeeping.map((task) => (
+                               <div key={task.id} 
+                                 onClick={() => handleHousekeepingStatus(task.id)}
+                                 className="p-5 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-all cursor-pointer hover:scale-[1.02] active:scale-95"
+                               >
+                                  <div className="flex-grow">
+                                     <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-sm font-bold">Room {task.room}</p>
+                                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-widest">• {task.lastCleaned}</span>
+                                     </div>
+                                     <div className="flex items-center gap-4">
+                                        <p className="text-[9px] text-white/40 uppercase tracking-widest">{task.type}</p>
+                                        <div className="flex items-center gap-1.5">
+                                           <div className="w-3 h-3 bg-white/10 rounded-full flex items-center justify-center">
+                                              <User className="w-2 h-2 text-gold-400" />
+                                           </div>
+                                           <span className="text-[8px] font-bold text-white/30 uppercase">{task.staff}</span>
+                                        </div>
+                                     </div>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-2">
+                                     <div className={cn("px-4 py-1.5 rounded-xl flex items-center gap-2 border", 
+                                        task.status === 'DIRTY' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                        task.status === 'CLEANING' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                        'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                     )}>
+                                        <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", task.color)} />
+                                        <span className="text-[9px] font-bold uppercase tracking-widest">{task.status}</span>
+                                     </div>
+                                     <p className="text-[7px] font-bold text-white/20 uppercase">Click to Update</p>
+                                  </div>
+                               </div>
+                            ))}
+                         </div>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "analytics" && (
+              <div className="space-y-8 lg:col-span-12">
+                {/* Top Row: Main Charts */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Revenue Growth Chart */}
+                  <div className="lg:col-span-8 bg-white rounded-[3rem] border border-sand-100 shadow-sm p-10 relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-10">
+                      <div>
+                        <h3 className="text-2xl font-serif font-bold text-navy-950">Financial Overview</h3>
+                        <p className="text-xs text-navy-950/40 font-bold uppercase tracking-widest mt-1">Monthly Revenue Streams</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="px-4 py-2 bg-sand-50 rounded-xl text-[10px] font-bold text-navy-950/60 uppercase tracking-widest">Last 6 Months</span>
+                      </div>
+                    </div>
+                    
+                    {/* Custom CSS Chart Simulation */}
+                    <div className="h-64 flex items-end gap-4 relative">
+                       {/* Grid Lines */}
+                       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-5">
+                          {[...Array(5)].map((_, i) => <div key={i} className="border-t border-navy-950 w-full" />)}
+                       </div>
+                       
+                       {[
+                         { month: 'Jan', val: 45, amt: '1.2L' },
+                         { month: 'Feb', val: 65, amt: '1.8L' },
+                         { month: 'Mar', val: 55, amt: '1.5L' },
+                         { month: 'Apr', val: 85, amt: '2.4L' },
+                         { month: 'May', val: 95, amt: '2.8L' },
+                         { month: 'Jun', val: 100, amt: '3.1L' }
+                       ].map((data, i) => (
+                         <div key={data.month} className="flex-grow flex flex-col items-center group relative h-full justify-end">
+                            <motion.div 
+                              initial={{ height: 0 }}
+                              animate={{ height: `${data.val}%` }}
+                              transition={{ delay: i * 0.1, duration: 1 }}
+                              className="w-full bg-gradient-to-t from-gold-600/20 to-gold-500 rounded-t-2xl relative group-hover:from-navy-950 group-hover:to-navy-800 transition-all duration-500 shadow-sm"
+                            >
+                               <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-navy-950 text-white text-[10px] font-bold py-1 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                                  ₹{data.amt}
+                               </div>
+                            </motion.div>
+                            <p className="mt-4 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">{data.month}</p>
+                         </div>
+                       ))}
+                    </div>
+                  </div>
+
+                  {/* Occupancy Circular Progress */}
+                  <div className="lg:col-span-4 bg-navy-950 rounded-[3rem] p-10 text-white flex flex-col items-center justify-center text-center relative overflow-hidden shadow-2xl">
+                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+                     <h3 className="text-xl font-bold mb-8 relative z-10 font-serif italic">Live Occupancy</h3>
+                     <div className="relative w-48 h-48 flex items-center justify-center mb-8">
+                        <svg className="w-full h-full -rotate-90">
+                           <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/10" />
+                           <motion.circle 
+                              cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="12" fill="transparent" 
+                              strokeDasharray={552.92}
+                              initial={{ strokeDashoffset: 552.92 }}
+                              animate={{ strokeDashoffset: 552.92 * (1 - 0.78) }}
+                              transition={{ duration: 2, ease: "easeOut" }}
+                              className="text-gold-500" 
+                              strokeLinecap="round"
+                           />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                           <span className="text-4xl font-serif font-bold italic text-gold-500">78%</span>
+                           <span className="text-[8px] font-bold uppercase tracking-[0.2em] opacity-40 mt-1">Full House</span>
+                        </div>
+                     </div>
+                     <p className="text-xs text-white/60 max-w-[180px] leading-relaxed relative z-10 font-medium">
+                        Higher than last month's average of 64%
+                     </p>
+                  </div>
+                </div>
+
+                {/* Bottom Row: Distribution & Insights */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                   <div className="bg-white rounded-[2.5rem] p-8 border border-sand-100 shadow-sm">
+                      <h4 className="text-sm font-bold text-navy-950 mb-6 uppercase tracking-widest flex items-center gap-2">
+                        <Star className="w-4 h-4 text-gold-500" /> Room Performance
+                      </h4>
+                      <div className="space-y-6">
+                         {[
+                           { name: 'Heritage Suite', val: 85, color: 'bg-gold-500' },
+                           { name: 'Riverside Cottage', val: 62, color: 'bg-navy-950' },
+                           { name: 'Garden Villa', val: 45, color: 'bg-sand-300' }
+                         ].map(room => (
+                           <div key={room.name}>
+                             <div className="flex justify-between text-[10px] font-bold mb-2 uppercase tracking-wide">
+                                <span>{room.name}</span>
+                                <span>{room.val}%</span>
+                             </div>
+                             <div className="h-1.5 bg-sand-50 rounded-full overflow-hidden">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${room.val}%` }}
+                                  className={cn("h-full rounded-full", room.color)}
+                                />
+                             </div>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="bg-white rounded-[2.5rem] p-8 border border-sand-100 shadow-sm flex flex-col justify-between">
+                      <h4 className="text-sm font-bold text-navy-950 mb-4 uppercase tracking-widest">Booking Source</h4>
+                      <div className="flex-grow flex items-center justify-center">
+                         <div className="flex gap-4">
+                            <div className="text-center">
+                               <div className="w-16 h-16 rounded-2xl bg-sand-50 flex items-center justify-center mb-2 border border-sand-100 shadow-sm">
+                                  <span className="text-lg font-bold">42%</span>
+                               </div>
+                               <p className="text-[8px] font-bold opacity-40 uppercase">Direct</p>
+                            </div>
+                            <div className="text-center">
+                               <div className="w-16 h-16 rounded-2xl bg-gold-500/10 flex items-center justify-center mb-2 border border-gold-500/20 shadow-sm">
+                                  <span className="text-lg font-bold text-gold-700">38%</span>
+                               </div>
+                               <p className="text-[8px] font-bold opacity-40 uppercase">HampiStays</p>
+                            </div>
+                            <div className="text-center">
+                               <div className="w-16 h-16 rounded-2xl bg-navy-950 flex items-center justify-center mb-2 shadow-lg">
+                                  <span className="text-lg font-bold text-white">20%</span>
+                               </div>
+                               <p className="text-[8px] font-bold opacity-40 uppercase">Other</p>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="bg-gradient-to-br from-gold-500 to-gold-600 rounded-[2.5rem] p-8 text-navy-950 flex flex-col justify-between shadow-xl shadow-gold-500/20 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                           <TrendingUp className="w-4 h-4" />
+                           <p className="text-[10px] font-bold uppercase tracking-widest">Smart Insight</p>
+                        </div>
+                        <h4 className="text-xl font-serif font-bold italic leading-tight mb-4">
+                           Bookings are 24% higher for weekends.
+                        </h4>
+                      </div>
+                      <p className="text-sm font-medium opacity-90 leading-relaxed">
+                         Consider increasing your weekend "Riverside Cottage" rates by 10% to maximize revenue.
+                      </p>
+                      <Button variant="outline" className="bg-white/20 border-white/40 text-navy-950 rounded-xl mt-6 font-bold hover:bg-white/40 transition-all shadow-sm">
+                         Apply Auto-Pricing
+                      </Button>
+                   </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "inbox" && (
+              <div className="bg-white rounded-[3.5rem] border border-sand-200 shadow-xl overflow-hidden flex h-[700px]">
+                {/* Sidebar */}
+                <div className="w-1/3 border-r border-sand-100 flex flex-col bg-sand-50/30">
+                  <div className="p-8 border-b border-sand-100">
+                    <h3 className="text-2xl font-serif font-bold text-navy-950 mb-1">Guest Inbox</h3>
+                    <p className="text-[10px] text-navy-950/40 uppercase tracking-widest font-bold">Active Conversations</p>
+                  </div>
+                  <div className="flex-grow overflow-y-auto p-4 space-y-3">
+                    {(resort.bookings || []).filter((b: any) => b.status === "CONFIRMED" || b.status === "CHECKED_IN").map((booking: any) => (
+                      <button 
+                        key={booking.id}
+                        onClick={() => setActiveMessageBooking(booking)}
+                        className={cn("w-full text-left p-5 rounded-[2rem] border transition-all duration-300", 
+                          activeMessageBooking?.id === booking.id 
+                            ? "bg-navy-950 border-navy-950 shadow-lg shadow-navy-950/20" 
+                            : "bg-white border-sand-100 hover:border-gold-300 hover:shadow-md")}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-sm", 
+                            activeMessageBooking?.id === booking.id ? "bg-gold-500 text-navy-950" : "bg-sand-100 text-navy-950")}>
+                            {booking.user?.name[0]}
+                          </div>
+                          <div className="overflow-hidden">
+                            <p className={cn("text-sm font-bold truncate", activeMessageBooking?.id === booking.id ? "text-white" : "text-navy-950")}>
+                              {booking.user?.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={cn("text-[9px] font-bold uppercase tracking-widest", activeMessageBooking?.id === booking.id ? "text-gold-400" : "text-navy-950/40")}>
+                                {booking.referenceNumber}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                    {(resort.bookings || []).filter((b: any) => b.status === "CONFIRMED" || b.status === "CHECKED_IN").length === 0 && (
+                      <div className="text-center py-20 px-8">
+                        <div className="w-16 h-16 bg-sand-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Mail className="w-8 h-8 text-sand-300" />
+                        </div>
+                        <p className="text-sm text-navy-950/30 italic font-medium">No active stays to message.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Chat Area */}
+                <div className="flex-grow flex flex-col bg-white relative">
+                  {activeMessageBooking ? (
+                    <>
+                      <div className="p-8 border-b border-sand-100 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                        <div className="flex items-center gap-4">
+                           <div className="w-14 h-14 rounded-2xl bg-navy-950 text-gold-500 flex items-center justify-center font-bold text-xl shadow-inner">
+                             {activeMessageBooking.user?.name[0]}
+                           </div>
+                           <div>
+                             <p className="text-lg font-bold text-navy-950">{activeMessageBooking.user?.name}</p>
+                             <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                               <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Active Now</p>
+                             </div>
+                           </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <Button variant="outline" className="h-10 w-10 p-0 rounded-xl border-sand-200">
+                             <TrendingUp className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex-grow p-8 overflow-y-auto space-y-8 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
+                        {messages.filter(m => m.bookingId === activeMessageBooking.id).map((msg, i) => (
+                          <motion.div 
+                            key={msg.id} 
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ delay: i * 0.05 }}
+                            className={cn("flex flex-col", msg.senderId === user?.id ? "items-end" : "items-start")}
+                          >
+                            <div className={cn("max-w-[80%] p-6 rounded-[2rem] shadow-xl relative group transition-all duration-300", 
+                              msg.senderId === user?.id 
+                                ? "bg-gradient-to-br from-navy-950 to-navy-800 text-white rounded-tr-none border border-white/10" 
+                                : "bg-white border border-sand-200 text-navy-950 rounded-tl-none")}>
+                              
+                              {msg.senderId === user?.id && (
+                                <div className="absolute top-0 right-0 w-8 h-8 bg-gold-500/10 rounded-full blur-xl -mr-4 -mt-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              )}
+                              
+                              <p className={cn("text-sm leading-relaxed font-medium", msg.senderId === user?.id ? "!text-white" : "!text-navy-950")}>{msg.text}</p>
+                              
+                              <div className={cn("flex items-center gap-2 mt-3", msg.senderId === user?.id ? "justify-end" : "justify-start")}>
+                                <span className={cn("text-[8px] font-bold uppercase tracking-widest", msg.senderId === user?.id ? "text-gold-400/80" : "text-navy-950/40")}>
+                                  {new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {msg.senderId === user?.id && <CheckCircle className="w-3 h-3 text-gold-500" />}
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+
+                      <form onSubmit={handleSendMessage} className="p-8 border-t border-sand-100 bg-white">
+                        <div className="flex gap-4 items-center bg-sand-50 p-2 rounded-[2.5rem] border border-sand-200 focus-within:border-gold-500 transition-all shadow-inner">
+                          <input 
+                            type="text" 
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            placeholder={`Message ${activeMessageBooking.user?.name}...`}
+                            className="flex-grow bg-transparent px-6 py-3 outline-none text-navy-950 font-medium placeholder:text-navy-950/30"
+                          />
+                          <Button type="submit" className="rounded-full w-14 h-14 p-0 shadow-gold group">
+                            <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
+                          </Button>
+                        </div>
+                      </form>
+                    </>
+                  ) : (
+                    <div className="flex-grow flex flex-col items-center justify-center p-20 text-center">
+                      <div className="w-24 h-24 bg-sand-50 rounded-[2.5rem] flex items-center justify-center mb-8 rotate-12 shadow-sm border border-sand-100">
+                        <Mail className="w-10 h-10 text-gold-500 -rotate-12" />
+                      </div>
+                      <h3 className="text-2xl font-serif font-bold text-navy-950 mb-2">Private Guest Channel</h3>
+                      <p className="text-navy-950/40 max-w-xs mx-auto text-sm leading-relaxed">
+                        Select an active booking to begin your direct communication with the guest.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === "settings" && (
               <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-12">
                 <h2 className="text-2xl font-serif font-bold text-navy-950 mb-8">Business Settings</h2>
@@ -613,58 +1238,6 @@ Verified by HampiStays Partner Network.
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Side Panel */}
-          <div className={cn("lg:col-span-4 space-y-10", (activeTab !== "overview" && activeTab !== "properties") ? "hidden lg:block" : "block")}>
-            {/* Recent Activity */}
-            <div className="bg-white rounded-[3rem] border border-sand-100 shadow-sm p-8">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-serif font-bold text-navy-950">Recent Stays</h3>
-                <button onClick={() => setShowBookingsModal(true)} className="text-xs font-bold text-gold-600 uppercase tracking-widest hover:text-gold-700">View All</button>
-              </div>
-              <div className="space-y-6">
-                {(resort.bookings?.length > 0 ? resort.bookings : []).slice(0, 4).map((booking: any) => (
-                  <div key={booking.id} className="flex items-center gap-4 group cursor-pointer">
-                    <div className="w-12 h-12 rounded-2xl bg-sand-50 flex items-center justify-center font-bold text-navy-950 border border-sand-100 group-hover:border-gold-300 transition-all">
-                      {booking.user?.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-grow">
-                      <p className="text-sm font-bold text-navy-950">{booking.user?.name}</p>
-                      <p className="text-[10px] text-navy-950/40 uppercase tracking-widest">
-                        {new Date(booking.checkIn).toLocaleDateString()} • {booking.status}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-sand-300 group-hover:text-gold-500 transition-all" />
-                  </div>
-                ))}
-                {(!resort.bookings || resort.bookings.length === 0) && (
-                  <div className="text-center py-6 text-navy-950/30 italic text-sm">No bookings yet</div>
-                )}
-              </div>
-            </div>
-
-            {/* Meal Packages Display */}
-            <div className="bg-navy-950 rounded-[3rem] p-8 text-white">
-              <h3 className="text-xl font-serif font-bold mb-6">Meal Packages</h3>
-              <div className="space-y-4">
-                {(resort.mealPackages || []).map((pkg: any, i: number) => (
-                  <div key={i} className="p-4 rounded-2xl border border-white/10 bg-white/5">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="font-bold">{pkg.name}</p>
-                      <span className="text-gold-400 font-bold">₹{pkg.price}</span>
-                    </div>
-                    <p className="text-[10px] text-white/40 italic">{pkg.description}</p>
-                  </div>
-                ))}
-                {(!resort.mealPackages || resort.mealPackages.length === 0) && (
-                  <p className="text-xs text-white/30 italic text-center py-4">No meal packages defined</p>
-                )}
-                <Button variant="outline" className="w-full rounded-xl border-white/20 text-white hover:bg-white hover:text-navy-950 mt-4">
-                  Manage Dining
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -731,13 +1304,37 @@ Verified by HampiStays Partner Network.
                               <p className="text-[10px] font-bold text-gold-600 uppercase tracking-widest">{booking.referenceNumber}</p>
                             </div>
                           </div>
-                          <div className="p-4 rounded-2xl bg-sand-50/50 border border-sand-100 space-y-2">
-                            <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Contact Info</p>
-                            <p className="text-xs font-bold text-navy-950">{booking.user?.email}</p>
-                            <p className="text-xs text-navy-950/60 font-medium">+91 98765 43210</p>
+                          <div className="p-4 rounded-2xl bg-sand-50/50 border border-sand-100 space-y-3">
+                            <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">Digital Check-In</p>
+                            <div className="bg-white p-3 rounded-xl border border-sand-200 flex items-center justify-center">
+                               {/* QR Code Simulation */}
+                               <div className="w-24 h-24 bg-navy-950 p-2 rounded-lg relative group">
+                                  <div className="w-full h-full border-2 border-white/20 border-dashed rounded-md flex items-center justify-center">
+                                    <div className="grid grid-cols-2 gap-1 w-12 h-12 opacity-40">
+                                      <div className="bg-white rounded-sm" /><div className="bg-white rounded-sm" />
+                                      <div className="bg-white rounded-sm" /><div className="bg-white rounded-sm" />
+                                    </div>
+                                  </div>
+                                  <div className="absolute inset-0 flex items-center justify-center bg-gold-600/90 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer">
+                                    <span className="text-[8px] font-bold text-white uppercase text-center leading-tight px-2">Click to Print QR Card</span>
+                                  </div>
+                               </div>
+                            </div>
+                            <p className="text-[8px] text-center text-navy-950/40 uppercase font-bold">Ref: {booking.referenceNumber}</p>
                           </div>
                           <div className="flex gap-2">
-                             <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200">Message</Button>
+                             <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 rounded-xl text-[10px] h-10 border-sand-200"
+                              onClick={() => {
+                                setShowBookingsModal(false);
+                                navigate("/dashboard?tab=inbox");
+                                setActiveMessageBooking(booking);
+                              }}
+                            >
+                              Message
+                            </Button>
                              <Button variant="outline" size="sm" className="flex-1 rounded-xl text-[10px] h-10 border-sand-200">History</Button>
                           </div>
                         </div>
@@ -785,15 +1382,26 @@ Verified by HampiStays Partner Network.
                              </div>
                              
                              <div className="flex gap-3">
-                               {booking.status === "PENDING" && (
-                                 <>
-                                   <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
-                                   <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
-                                 </>
-                               )}
-                               {booking.status === "CONFIRMED" && (
-                                 <Button variant="outline" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200">Generate Invoice</Button>
-                               )}
+                                {booking.status === "PENDING" && (
+                                  <>
+                                    <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
+                                    <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
+                                  </>
+                                )}
+                                {booking.status === "CONFIRMED" && (
+                                  <div className="flex gap-3">
+                                    <Button variant="outline" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200">Generate Invoice</Button>
+                                    <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkin')} className="rounded-xl px-8 bg-gold-600 hover:bg-gold-700 text-white shadow-lg">Check-In Guest</Button>
+                                  </div>
+                                )}
+                                {booking.status === "CHECKED_IN" && (
+                                  <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkout')} className="rounded-xl px-8 bg-navy-950 hover:bg-navy-900 text-white shadow-lg">Process Check-Out</Button>
+                                )}
+                                {booking.status === "COMPLETED" && (
+                                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4" /> Guest Checked Out
+                                  </span>
+                                )}
                              </div>
                           </div>
                         </div>

@@ -16,12 +16,12 @@ export function BookingConfirmationPage() {
   const location = useLocation();
   const state = location.state;
 
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+
   if (!state?.booking) return <Navigate to="/resorts" replace />;
 
   const { booking, resortName, roomName, image, nights, grandTotal, guestName } = state;
-
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
 
   const handleDownloadInvoice = async () => {
     const doc = new jsPDF();

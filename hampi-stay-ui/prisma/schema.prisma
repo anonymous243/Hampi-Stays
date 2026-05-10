@@ -19,6 +19,7 @@ enum Role {
   RESORT_OWNER
   GUIDE
   ADMIN
+  STAFF
 }
 
 enum BookingStatus {
@@ -51,6 +52,8 @@ model User {
   ownerProfile  ResortOwner?
   guideProfile  GuideProfile?
   guideBookings GuideBooking[]
+  messages      Message[]
+  staffProfile  StaffMember?
 
   @@map("users")
 }
@@ -93,6 +96,8 @@ model Resort {
   wishlist        Wishlist[]
   reviews         Review[]
   discountCodes   DiscountCode[]
+  staff           StaffMember[]
+  invitations     Invitation[]
 
   @@map("resorts")
 }
@@ -188,6 +193,7 @@ model Booking {
   resortId         String
   resort           Resort        @relation(fields: [resortId], references: [id])
   roomId           String?       // Optional link to specific room type
+  messages         Message[]
 
   @@map("bookings")
 }
@@ -269,6 +275,7 @@ model GuideProfile {
   status          ResortStatus @default(PENDING)
   
   isVerified      Boolean  @default(false) // For ASI certification
+  isActive        Boolean  @default(true)  // For toggling profile visibility
   rating          Float    @default(0)
   reviewCount     Int      @default(0)
   images          String[]
@@ -321,4 +328,39 @@ model Experience {
   guide           GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@map("experiences")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  text      String
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("messages")
+}
+
+model StaffMember {
+  id        String   @id @default(cuid())
+  role      String   // MANAGER, RECEPTIONIST, HOUSEKEEPING
+  resortId  String
+  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@map("staff_members")
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  email     String
+  role      String   // MANAGER, RECEPTIONIST, HOUSEKEEPING
+  resortId  String
+  resort    Resort   @relation(fields: [resortId], references: [id], onDelete: Cascade)
+  code      String   @unique
+  status    String   @default("PENDING") // PENDING, ACCEPTED, EXPIRED
+  createdAt DateTime @default(now())
+  @@map("invitations")
 }

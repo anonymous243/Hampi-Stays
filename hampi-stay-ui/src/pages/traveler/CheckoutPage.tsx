@@ -46,8 +46,10 @@ export function CheckoutPage() {
     nationality: "Indian",
   });
 
-  const bookingData = location.state || {};
-  const hasBookingData = !!location.state;
+  const { bookingData, hasBookingData } = useMemo(() => ({
+    bookingData: location.state || {},
+    hasBookingData: !!location.state
+  }), [location.state]);
 
   // Calculate nights
   const nights = useMemo(() => {

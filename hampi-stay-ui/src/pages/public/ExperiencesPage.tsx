@@ -15,8 +15,12 @@ interface Experience {
   price: number;
   durationHours: number;
   meetingPoint: string;
+  images?: string[];
   guide: {
-    user: { name: string };
+    user: { 
+      name: string;
+      avatar?: string;
+    };
   };
 }
 
@@ -36,7 +40,7 @@ export function ExperiencesPage() {
   useEffect(() => {
     const fetchExperiences = async () => {
       try {
-        const res = await fetch('/api/experiences');
+        const res = await fetch('http://localhost:5000/api/experiences');
         if (!res.ok) throw new Error('API request failed');
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -163,6 +167,19 @@ export function ExperiencesPage() {
                 {/* Image Area */}
                 <div className="relative h-72 overflow-hidden bg-sand-100">
                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                   
+                   {exp.images?.[0] ? (
+                     <img 
+                       src={exp.images[0]} 
+                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                       alt={exp.title}
+                     />
+                   ) : (
+                     <div className="absolute inset-0 flex items-center justify-center text-sand-300 bg-sand-100">
+                        <Camera className="w-12 h-12 opacity-20" />
+                     </div>
+                   )}
+
                    <div className="absolute top-6 left-6 z-20 flex flex-col gap-2">
                      <span className="px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-bold text-navy-950 uppercase tracking-widest shadow-sm">
                        {exp.durationHours} Hours
@@ -172,9 +189,6 @@ export function ExperiencesPage() {
                      <p className="text-white text-sm font-medium flex items-center gap-2">
                        <MapPin className="w-4 h-4 text-gold-400" /> {exp.meetingPoint}
                      </p>
-                   </div>
-                   <div className="absolute inset-0 flex items-center justify-center text-sand-300 -z-10 bg-sand-100">
-                      <Camera className="w-12 h-12 opacity-20" />
                    </div>
                 </div>
 
@@ -198,8 +212,12 @@ export function ExperiencesPage() {
                   <div className="mt-auto space-y-6">
                     <div className="flex items-center justify-between py-4 border-t border-sand-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-sand-100 border border-sand-200 flex items-center justify-center font-bold text-navy-950 text-xs shadow-inner uppercase">
-                          {exp.guide.user.name.charAt(0)}
+                        <div className="w-10 h-10 rounded-full bg-sand-100 border border-sand-200 flex items-center justify-center font-bold text-navy-950 text-xs shadow-inner uppercase overflow-hidden">
+                          {exp.guide.user.avatar ? (
+                            <img src={exp.guide.user.avatar} className="w-full h-full object-cover" />
+                          ) : (
+                            exp.guide.user.name.charAt(0)
+                          )}
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-navy-950/30 uppercase tracking-widest">Expert Guide</p>

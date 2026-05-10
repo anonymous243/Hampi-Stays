@@ -13,10 +13,11 @@ export function ForgotPasswordPage() {
   const [error, setError] = useState("");
 
   const hampiImages = [
-    "/images/hampi-3.png", // Boulders
-    "/images/hampi-2.png", // Virupaksha Temple
     "/images/hampi-1.png", // Stone Chariot
-    "/images/hampi-4.png"  // Lotus Mahal
+    "/images/hampi-2.png", // Virupaksha Temple
+    "/images/hampi-3.png", // Boulders
+    "/images/hampi-4.png", // Lotus Mahal
+    "/images/auth-bg.png"  // Serene Dawn Landscape
   ];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -70,9 +71,10 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-sand-50 p-4 md:p-6 lg:p-8 gap-4 md:gap-6 lg:gap-8 overflow-hidden">
-      {/* Left Panel: Cinematic Image */}
-      <div className="relative w-full md:w-1/2 h-[40vh] md:h-auto md:flex-1 overflow-hidden rounded-[15px] shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-sand-50 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+      <div className="w-full max-w-[1400px] md:h-[800px] flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8">
+        {/* Left Panel: Cinematic Image */}
+        <div className="relative w-full md:w-1/2 h-[40vh] md:h-full overflow-hidden rounded-[3rem] shadow-2xl">
         <AnimatePresence>
           <motion.img
             key={currentImageIndex}
@@ -82,10 +84,24 @@ export function ForgotPasswordPage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
             alt="Scenic Hampi"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
         </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/40 to-transparent" />
+        
+        {/* Carousel Indicators */}
+        <div className="absolute top-8 left-10 flex gap-2 z-20">
+          {hampiImages.map((_, idx) => (
+            <div key={idx} className="h-[2px] w-8 rounded-full bg-white/20 overflow-hidden backdrop-blur-sm">
+              <motion.div
+                className="h-full bg-gold-400"
+                initial={{ width: "0%" }}
+                animate={{ width: currentImageIndex === idx ? "100%" : currentImageIndex > idx ? "100%" : "0%" }}
+                transition={{ duration: currentImageIndex === idx ? 3 : 0.3, ease: "linear" }}
+              />
+            </div>
+          ))}
+        </div>
         <div className="absolute inset-0 bg-navy-950/20" />
         
         <div className="absolute bottom-12 left-10 right-10 text-white z-10 hidden md:block">
@@ -104,22 +120,19 @@ export function ForgotPasswordPage() {
 
             <h2 className="text-5xl font-serif font-bold mb-4 leading-tight">
               Regain Access to your <br />
-              <span className="text-gold-400 italic">Sanctuary</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold-300 via-gold-100 to-gold-500 italic drop-shadow-sm">Sanctuary</span>
             </h2>
-            <p className="text-sand-100/80 max-w-sm leading-relaxed text-base">
-              Reset your password to continue managing your luxury experiences and exclusive member benefits.
-            </p>
 
             {/* Stats row */}
-            <div className="flex gap-8 mt-8">
+            <div className="flex gap-6 mt-6">
               {[
-                { value: "200+", label: "Luxury Resorts" },
-                { value: "10k+", label: "Happy Guests" },
-                { value: "4.9★", label: "Avg Rating" },
+                { value: "200+", label: "Resorts" },
+                { value: "10k+", label: "Guests" },
+                { value: "4.9★", label: "Rating" },
               ].map((stat) => (
                 <div key={stat.label}>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
-                  <p className="text-xs text-sand-200 font-medium mt-0.5">{stat.label}</p>
+                  <p className="text-xl font-bold text-white">{stat.value}</p>
+                  <p className="text-[10px] text-sand-200 font-medium mt-0.5">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -128,7 +141,7 @@ export function ForgotPasswordPage() {
       </div>
 
       {/* Right Panel: Glassmorphism Form */}
-      <div className="relative w-full md:w-1/2 h-[60vh] md:h-auto md:flex-1 flex flex-col items-center p-6 md:p-12 lg:p-24 z-10 bg-white/40 backdrop-blur-md rounded-[15px] border border-white/20 overflow-y-auto">
+      <div className="relative w-full md:w-1/2 h-[60vh] md:h-full flex flex-col items-center p-6 md:p-8 lg:p-12 z-10 bg-white/40 backdrop-blur-md rounded-[3rem] border border-white/20 overflow-y-auto">
         {/* Ambient warm orbs */}
         <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-gold-200/30 rounded-full blur-[120px] pointer-events-none animate-float-slow" />
         <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-sand-300/30 rounded-full blur-[100px] pointer-events-none animate-float" />
@@ -138,36 +151,36 @@ export function ForgotPasswordPage() {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="w-full bg-sand-100/90 backdrop-blur-2xl p-8 md:p-12 rounded-[2.5rem] shadow-luxury border border-sand-200/50 relative"
+            className="w-full bg-sand-100/90 backdrop-blur-2xl p-6 md:p-10 rounded-[3rem] shadow-luxury border border-sand-200/50 relative"
           >
             {/* Back button */}
-            <Link to="/login" className="absolute top-8 left-8 text-navy-800/40 hover:text-navy-950 transition-colors z-20">
+            <Link to="/login" className="absolute top-6 left-6 text-navy-800/40 hover:text-navy-950 transition-colors z-20">
               <ArrowLeft className="w-6 h-6" />
             </Link>
 
-            <motion.div variants={itemVariant} className="flex justify-center mb-8 mt-4">
+            <motion.div variants={itemVariant} className="flex justify-center mb-4 mt-2">
               <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
-                <img src="/logo-full.png" alt="HampiStays" className="h-14 w-auto object-contain drop-shadow-md" />
+                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
               </Link>
             </motion.div>
 
             {!submitted ? (
               <>
-                <motion.div variants={itemVariant} className="text-center mb-10">
-                  <h1 className="text-3xl font-serif font-bold text-navy-950 mb-3">Reset Password</h1>
-                  <p className="text-navy-800/60 font-medium text-sm">
-                    Enter your registered email or phone number to receive a reset link.
+                <motion.div variants={itemVariant} className="text-center mb-6">
+                  <h1 className="text-xl md:text-2xl font-serif font-bold text-navy-950 mb-2">Reset Password</h1>
+                  <p className="text-navy-800/60 font-medium text-[10px] md:text-xs">
+                    Enter your details to receive a reset link.
                   </p>
                 </motion.div>
 
-                <motion.div variants={itemVariant} className="flex p-1 bg-sand-200/50 rounded-xl mb-8">
+                <motion.div variants={itemVariant} className="flex p-1 bg-sand-200/50 rounded-xl mb-4">
                   <button
                     type="button"
                     onClick={() => {
                       setMethod("email");
                       setValue("");
                     }}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-300 ${
                       method === "email" 
                         ? "bg-white text-navy-950 shadow-sm" 
                         : "text-navy-800/60 hover:text-navy-900"
@@ -181,7 +194,7 @@ export function ForgotPasswordPage() {
                       setMethod("phone");
                       setValue("");
                     }}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-300 ${
+                    className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all duration-300 ${
                       method === "phone" 
                         ? "bg-white text-navy-950 shadow-sm" 
                         : "text-navy-800/60 hover:text-navy-900"
@@ -191,9 +204,9 @@ export function ForgotPasswordPage() {
                   </button>
                 </motion.div>
 
-                <motion.form variants={itemVariant} className="space-y-6" onSubmit={handleSubmit}>
+                <motion.form variants={itemVariant} className="space-y-4" onSubmit={handleSubmit}>
                   {error && (
-                    <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold animate-shake">
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-[10px] font-bold animate-shake">
                       {error}
                     </div>
                   )}
@@ -206,7 +219,7 @@ export function ForgotPasswordPage() {
                     required 
                   />
 
-                  <Button type="submit" className="w-full h-14 text-lg mt-2 shadow-gold" isLoading={isLoading}>
+                  <Button type="submit" className="w-full h-12 text-base mt-2 shadow-gold" isLoading={isLoading}>
                     Send Reset Link
                   </Button>
                 </motion.form>
@@ -215,28 +228,28 @@ export function ForgotPasswordPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-6"
+                className="text-center py-4"
               >
-                <div className="w-16 h-16 bg-gold-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle2 className="w-8 h-8 text-gold-600" />
+                <div className="w-12 h-12 bg-gold-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-6 h-6 text-gold-600" />
                 </div>
-                <h2 className="text-2xl font-serif font-bold text-navy-950 mb-3">Check your {method}</h2>
-                <p className="text-navy-800/70 font-medium text-sm leading-relaxed mb-8">
-                  We have sent a password reset link to <br/>
+                <h2 className="text-xl font-serif font-bold text-navy-950 mb-2">Check your {method}</h2>
+                <p className="text-navy-800/70 font-medium text-xs leading-relaxed mb-6">
+                  We have sent a reset link to <br/>
                   <span className="font-bold text-navy-950">{value}</span>
                 </p>
                 <Button 
                   onClick={() => setSubmitted(false)} 
                   variant="outline"
-                  className="w-full h-12"
+                  className="w-full h-10 text-xs"
                 >
-                  Try another {method}
+                  Try another
                 </Button>
               </motion.div>
             )}
 
-            <motion.div variants={itemVariant} className="text-center mt-10">
-              <p className="text-navy-800/60 font-medium">
+            <motion.div variants={itemVariant} className="text-center mt-6">
+              <p className="text-xs text-navy-800/60 font-medium">
                 Remember your password?{" "}
                 <Link to="/login" className="text-gold-600 font-bold hover:text-sunset-500 transition-colors">
                   Sign in
@@ -245,6 +258,7 @@ export function ForgotPasswordPage() {
             </motion.div>
           </motion.div>
         </div>
+      </div>
       </div>
     </div>
   );
