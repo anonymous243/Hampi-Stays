@@ -421,6 +421,31 @@ app.get('/api/users/:userId/notifications', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
+
+app.get('/api/users/:userId/bookings', async (req, res) => {
+  try {
+    const bookings = await prisma.booking.findMany({
+      where: { userId: req.params.userId },
+      include: { resort: true },
+      orderBy: { checkIn: 'asc' }
+    });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user bookings' });
+  }
+});
+
+app.get('/api/users/:userId/wishlist', async (req, res) => {
+  try {
+    const wishlist = await prisma.savedResort ? await prisma.savedResort.findMany({
+      where: { userId: req.params.userId },
+      include: { resort: true }
+    }) : [];
+    res.json(wishlist.map((w: any) => w.resort || w));
+  } catch (error) {
+    res.json([]);
+  }
+});
   
   // ============================================================
   // DISCOVERY & HERITAGE ROUTES
