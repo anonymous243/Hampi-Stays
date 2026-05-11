@@ -12,31 +12,30 @@ export function CheckoutSuccessPage() {
   const [booking, setBooking] = useState<any>(null);
 
   useEffect(() => {
-    const verifyPayment = async () => {
+    const fetchBookingDetails = async () => {
       if (!orderId) {
         setStatus("failed");
         return;
       }
 
       try {
-        const response = await fetch(`/api/bookings/${orderId}/verify-payment`, {
-          method: "POST",
-        });
+        // We just need to fetch the details since verification happened on the previous page
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings/reference/${orderId}`);
         const data = await response.json();
 
-        if (data.success) {
-          setBooking(data.booking);
+        if (response.ok && data) {
+          setBooking(data);
           setStatus("success");
         } else {
           setStatus("failed");
         }
       } catch (err) {
-        console.error("Verification error:", err);
+        console.error("Fetch error:", err);
         setStatus("failed");
       }
     };
 
-    verifyPayment();
+    fetchBookingDetails();
   }, [orderId]);
 
   if (status === "loading") {

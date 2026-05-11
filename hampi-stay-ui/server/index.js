@@ -434,6 +434,21 @@ app.patch('/api/notifications/:id/read', async (req, res) => {
   }
 });
 
+// Get Booking by Reference
+app.get('/api/bookings/reference/:reference', async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const booking = await prisma.booking.findUnique({
+      where: { referenceNumber: reference },
+      include: { resort: true, user: true }
+    });
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+    res.json(booking);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch booking' });
+  }
+});
+
 // ============================================================
 // BOOKING ROUTES
 // ============================================================
