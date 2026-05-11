@@ -79,6 +79,8 @@ export function ResortCard({
       if (response.ok) {
         const data = await response.json();
         setIsFav(data.saved);
+        // Dispatch custom event for real-time sync across components
+        window.dispatchEvent(new CustomEvent('wishlist-updated'));
       }
     } catch (err) {
       console.error(err);

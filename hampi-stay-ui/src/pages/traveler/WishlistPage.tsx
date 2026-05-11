@@ -28,6 +28,11 @@ export function WishlistPage() {
       }
     };
     fetchWishlist();
+    
+    // Real-time sync listener
+    const handleWishlistUpdate = () => fetchWishlist();
+    window.addEventListener('wishlist-updated', handleWishlistUpdate);
+    return () => window.removeEventListener('wishlist-updated', handleWishlistUpdate);
   }, [user]);
 
   const toggleWishlist = async (resortId: string) => {
@@ -39,6 +44,8 @@ export function WishlistPage() {
       });
       if (response.ok) {
         setWishlist(prev => prev.filter(r => r.id !== resortId));
+        // Dispatch for global sync
+        window.dispatchEvent(new CustomEvent('wishlist-updated'));
       }
     } catch (err) {
       console.error(err);

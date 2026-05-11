@@ -45,6 +45,17 @@ export function TravelerDashboard() {
     };
 
     fetchData();
+
+    // Real-time sync listener
+    const handleWishlistUpdate = () => {
+      fetch(`/api/users/${user.id}/wishlist`)
+        .then(res => res.json())
+        .then(data => setWishlist(data))
+        .catch(err => console.error("Real-time wishlist sync failed:", err));
+    };
+
+    window.addEventListener('wishlist-updated', handleWishlistUpdate);
+    return () => window.removeEventListener('wishlist-updated', handleWishlistUpdate);
   }, [user]);
 
   useEffect(() => {
