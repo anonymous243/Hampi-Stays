@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import hpp from 'hpp';
 import mongoSanitize from 'express-mongo-sanitize'; // Works for JSON objects in general
 import { body, validationResult } from 'express-validator';
 
@@ -105,8 +104,7 @@ export const securityHeaders = helmet({
  * Parameter Pollution & Sanitization
  */
 export const sanitizeRequest = [
-  mongoSanitize(), // Prevent NoSQL-style injection (even if using SQL, good for JSON)
-  hpp(), // Prevent HTTP Parameter Pollution
+  mongoSanitize(), // Prevent NoSQL-style injection
 ];
 
 /**
