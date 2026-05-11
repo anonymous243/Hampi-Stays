@@ -106,85 +106,96 @@ export function BookingsPage() {
   const handleDownloadInvoice = async (booking: Booking) => {
     const doc = new jsPDF();
     const safeRef = booking.referenceNumber || "HS-STAY";
+    
+    // Exact Brand Color Palette
+    const navy: [number, number, number] = [10, 15, 30];   // #0A0F1E
+    const gold: [number, number, number] = [184, 134, 11]; // #B8860B
+    const sand: [number, number, number] = [252, 250, 245]; // #FCFAF5
 
-    // Brand Colors
-    const navy: [number, number, number] = [10, 15, 30];
-    const gold: [number, number, number] = [184, 134, 11];
-
-    // 1. Header
+    // 1. Header with Brand Identity (High-Fidelity)
     doc.setFillColor(navy[0], navy[1], navy[2]);
-    doc.rect(0, 0, 210, 50, 'F');
+    doc.rect(0, 0, 210, 60, 'F');
     doc.setFillColor(gold[0], gold[1], gold[2]);
-    doc.rect(0, 50, 210, 2, 'F');
+    doc.rect(0, 60, 210, 3, 'F');
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("serif", "bold");
-    doc.setFontSize(26);
-    doc.text("HAMPISTAYS", 20, 30);
-
-    doc.setFontSize(10);
+    doc.setFontSize(32);
+    doc.text("HAMPISTAYS", 20, 35);
+    
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 200, 200);
-    doc.text("LUXURY ECO-HOSPITALITY", 20, 38);
+    doc.setTextColor(180, 180, 180);
+    doc.text("LUXURY ECO-HOSPITALITY", 20, 45);
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text("BOOKING INVOICE", 140, 25);
+    doc.text("BOOKING INVOICE", 140, 30);
     doc.setFont("helvetica", "normal");
-    doc.text(`REF: ${safeRef}`, 140, 31);
-    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 37);
+    doc.text(`REF: ${safeRef}`, 140, 37);
+    doc.text(`ISSUED: ${new Date().toLocaleDateString("en-IN")}`, 140, 44);
 
-    // 2. Main Info
+    // 2. Main Body Content
     doc.setTextColor(navy[0], navy[1], navy[2]);
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setFont("serif", "bold");
-    doc.text("GUEST INFORMATION", 20, 70);
-
-    doc.setFontSize(10);
+    doc.text("GUEST INFORMATION", 20, 85);
+    doc.text("STAY DETAILS", 110, 85);
+    
+    doc.setFontSize(11);
     doc.setFont("helvetica", "normal");
-    doc.text(`Primary Guest: ${user?.name}`, 20, 78);
-    doc.text(`Email: ${user?.email}`, 20, 83);
-    doc.text(`Status: ${booking.status}`, 20, 88);
+    doc.text(`Primary Guest: ${user?.name}`, 20, 95);
+    doc.text(`Email: ${user?.email}`, 20, 102);
+    doc.text(`Status: ${booking.status.toUpperCase()}`, 20, 109);
 
-    doc.setFontSize(14);
-    doc.setFont("serif", "bold");
-    doc.text("STAY DETAILS", 110, 70);
+    doc.text(`Resort: ${booking.resort?.name}`, 110, 95);
+    doc.text(`Location: ${booking.resort?.locationArea}, Hampi`, 110, 102);
+    doc.text(`Check-in: ${new Date(booking.checkIn).toLocaleDateString("en-IN")}`, 110, 109);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Resort: ${booking.resort?.name}`, 110, 78);
-    doc.text(`Location: ${booking.resort?.locationArea}`, 110, 83);
-    doc.text(`Date: ${new Date(booking.checkIn).toLocaleDateString("en-IN")} - ${new Date(booking.checkOut).toLocaleDateString("en-IN")}`, 110, 88);
-
-    // 3. Table
+    // 3. Itemized Data Table
     autoTable(doc, {
-      startY: 100,
+      startY: 125,
       head: [['Description', 'Amount']],
       body: [
         ['Accommodation Charges', `INR ${booking.totalPrice?.toLocaleString("en-IN")}`],
         ['GST & Service Fee (12%)', 'Included'],
         ['Total Amount Paid', `INR ${booking.totalPrice?.toLocaleString("en-IN")}`],
       ],
-      headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: 'bold' },
+      headStyles: { fillColor: navy, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center', cellPadding: 8 },
+      bodyStyles: { fontSize: 11, cellPadding: 10, textColor: [60, 60, 60] },
+      columnStyles: { 0: { fontStyle: 'bold', textColor: navy, cellWidth: 70 }, 1: { halign: 'right' } },
+      alternateRowStyles: { fillColor: sand },
+      margin: { left: 20, right: 20 },
       theme: 'grid',
-      margin: { left: 20, right: 20 }
+      styles: { lineColor: [230, 230, 230], lineWidth: 0.1 }
     });
 
-    // 4. QR Code
-    const tableFinalY = (doc as any).lastAutoTable.finalY;
+    // 4. Verification & QR Section
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const finalY = (doc as any).lastAutoTable.finalY + 25;
+    
+    doc.setFont("serif", "bold");
+    doc.setFontSize(14);
+    doc.text("CHECK-IN VERIFICATION", 140, finalY);
+    
     try {
-      const qrData = `Ref: ${safeRef} | Guest: ${user?.name}`;
-      const qrCode = await QRCode.toDataURL(qrData);
-      doc.addImage(qrCode, 'PNG', 140, tableFinalY + 10, 40, 40);
-      doc.setFontSize(10);
-      doc.text("Scan for Check-in", 140, tableFinalY + 55);
+      const qrData = `Ref: ${safeRef} | Guest: ${user?.name} | Resort: ${booking.resort?.name}`;
+      const qrCode = await QRCode.toDataURL(qrData, { margin: 1, width: 150, color: { dark: '#0A0F1E', light: '#FFFFFF' } });
+      doc.addImage(qrCode, 'PNG', 140, finalY + 5, 45, 45);
     } catch (e) { console.error(e); }
 
-    // 5. Footer
+    // 5. Elegant Footer
+    doc.setFillColor(248, 248, 248);
+    doc.rect(0, 270, 210, 27, 'F');
+    doc.setFont("serif", "italic");
+    doc.setFontSize(12);
+    doc.setTextColor(navy[0], navy[1], navy[2]);
+    doc.text("Thank you for your journey with us. We look forward to hosting you.", 105, 280, { align: 'center' });
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text("Thank you for your journey with us. help@hampistays.com", 105, 285, { align: 'center' });
+    doc.setTextColor(160, 160, 160);
+    doc.text("HampiStays Headquarters: Main Road, Kamalapura, Hampi, Karnataka 583239 | help@hampistays.com", 105, 287, { align: 'center' });
 
     doc.save(`HampiStays_Invoice_${safeRef}.pdf`);
   };
