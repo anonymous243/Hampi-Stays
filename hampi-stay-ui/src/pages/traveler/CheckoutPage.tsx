@@ -160,12 +160,6 @@ export function CheckoutPage() {
       setIsProcessing(false);
     }
   };
-      console.error("Payment error:", err);
-      alert(err.message || "Something went wrong. Please check your connection.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const toggleRequest = (id: string) =>
     setSelectedRequests(prev =>
