@@ -412,7 +412,7 @@ export function AdminDashboard() {
         <div className="lg:w-72 h-48 lg:h-auto relative">
           <img 
             src={resort.images?.[0] || "https://images.unsplash.com/photo-1548013146-72479768bbaa"} 
-            className="w-full h-full object-cover" 
+            className="w-full h-full object-cover rounded-[2.5rem]" 
             alt={resort.name}
           />
           {resort.isFeatured && (
@@ -915,7 +915,7 @@ export function AdminDashboard() {
               <div className="flex flex-col lg:flex-row justify-between gap-10">
                 <div className="flex-grow flex gap-6">
                   <div className="w-24 h-24 rounded-[2rem] bg-sand-100 flex items-center justify-center overflow-hidden border border-sand-200">
-                    {guide.user?.avatar ? <img src={guide.user.avatar} className="w-full h-full object-cover" /> : <User className="w-10 h-10 text-sand-300" />}
+                    {guide.user?.avatar ? <img src={guide.user.avatar} className="w-full h-full object-cover rounded-2xl" /> : <User className="w-10 h-10 text-sand-300" />}
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -952,7 +952,7 @@ export function AdminDashboard() {
                           onClick={() => window.open(guide.idImage, '_blank')}
                           className="w-20 h-20 rounded-xl overflow-hidden border border-sand-200 hover:border-gold-500 transition-colors group relative"
                         >
-                          <img src={guide.idImage} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                          <img src={guide.idImage} className="w-full h-full object-cover rounded-3xl opacity-60 group-hover:opacity-100 transition-opacity" />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-navy-950/20">
                             <ExternalLink className="w-4 h-4 text-white" />
                           </div>
@@ -1462,7 +1462,7 @@ export function AdminDashboard() {
             <div key={resort.id} className="p-6 rounded-2xl border border-sand-100 bg-sand-50/30 flex items-center justify-between hover:bg-sand-50 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-xl overflow-hidden border border-sand-200">
-                  <img src={resort.images?.[0] || ""} className="w-full h-full object-cover" alt="" />
+                  <img src={resort.images?.[0] || ""} className="w-full h-full object-cover rounded-xl" alt="" />
                 </div>
                 <div>
                   <p className="font-bold text-navy-950">{resort.name}</p>

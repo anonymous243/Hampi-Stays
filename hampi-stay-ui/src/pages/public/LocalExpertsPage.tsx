@@ -163,7 +163,7 @@ export function LocalExpertsPage() {
                     {/* Real Avatar */}
                     <div className="w-24 h-24 rounded-3xl bg-sand-50 border-2 border-sand-100 overflow-hidden flex items-center justify-center shadow-inner">
                       {guide.user.avatar ? (
-                        <img src={guide.user.avatar} className="w-full h-full object-cover" alt={guide.user.name} />
+                        <img src={guide.user.avatar} className="w-full h-full object-cover rounded-full" alt={guide.user.name} />
                       ) : (
                         <span className="text-4xl font-serif font-bold text-navy-950 group-hover:text-gold-600 transition-colors duration-500">
                           {guide.user.name.charAt(0)}
@@ -268,7 +268,7 @@ export function LocalExpertsPage() {
                 <div className="flex items-center gap-6 mb-10">
                   <div className="w-20 h-20 rounded-2xl bg-sand-50 border border-sand-100 overflow-hidden flex items-center justify-center">
                     {selectedGuide.user.avatar ? (
-                      <img src={selectedGuide.user.avatar} className="w-full h-full object-cover" alt={selectedGuide.user.name} />
+                      <img src={selectedGuide.user.avatar} className="w-full h-full object-cover rounded-full" alt={selectedGuide.user.name} />
                     ) : (
                       <span className="text-3xl font-serif font-bold text-navy-950">{selectedGuide.user.name[0]}</span>
                     )}

@@ -179,7 +179,7 @@ export function DiscoveryPage() {
                   <div className="relative h-64 -mx-8 -mt-8 mb-8 overflow-hidden">
                     <img 
                       src={poiErrors[selectedPOI.id] ? "/images/hampi-3.png" : selectedPOI.image} 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover rounded-b-[2rem]" 
                       onError={() => setPoiErrors(prev => ({ ...prev, [selectedPOI.id]: true }))}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />

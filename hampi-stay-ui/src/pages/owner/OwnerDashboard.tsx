@@ -829,7 +829,7 @@ export function OwnerDashboard() {
                               <div className="flex flex-wrap gap-2">
                                 {room.images?.map((img: string, i: number) => (
                                   <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden group">
-                                    <img src={img} className="w-full h-full object-cover" />
+                                    <img src={img} className="w-full h-full object-cover rounded-xl" />
                                     <button 
                                       onClick={async () => {
                                         if (window.confirm("Delete this room photo?")) {
@@ -931,7 +931,7 @@ export function OwnerDashboard() {
                     <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                       {resort.images?.map((img: string, i: number) => (
                         <div key={i} className="relative aspect-[4/3] rounded-2xl overflow-hidden group">
-                          <img src={img} className="w-full h-full object-cover" />
+                          <img src={img} className="w-full h-full object-cover rounded-2xl" />
                           <button 
                             onClick={() => {
                               if (window.confirm("Delete this property photo?")) {
