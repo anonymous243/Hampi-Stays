@@ -242,8 +242,13 @@ export function OwnerDashboard() {
     doc.text("• For billing disputes, contact partner.support@hampistays.com", 22, currentY + 30);
 
     try {
-      const qrData = `PartnerRef:${safeRef}|Total:${netPayout}|Property:${resort.name}`;
-      const qrCode = await QRCode.toDataURL(qrData, { margin: 1, width: 150 });
+      const qrUrl = `${window.location.origin}/dashboard/bookings`;
+      const qrCode = await QRCode.toDataURL(qrUrl, { 
+        margin: 1, 
+        width: 150,
+        color: { dark: '#0A0F1E', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      });
       doc.addImage(qrCode, 'PNG', 155, currentY + 10, 30, 30);
     } catch (e) { console.error(e); }
 
@@ -398,8 +403,13 @@ export function OwnerDashboard() {
     doc.text("SCAN TO VERIFY", 165, currentY + 10, { align: 'center' });
     
     try {
-      const qrData = `HS-CONFIRMATION|${safeRef}|${booking.user?.name}|${resort.name}`;
-      const qrCode = await QRCode.toDataURL(qrData, { margin: 1, width: 200 });
+      const qrUrl = `${window.location.origin}/dashboard/bookings`;
+      const qrCode = await QRCode.toDataURL(qrUrl, { 
+        margin: 1, 
+        width: 200,
+        color: { dark: '#0A0F1E', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      });
       doc.addImage(qrCode, 'PNG', 150, currentY + 13, 30, 30);
     } catch (e) { console.error(e); }
 

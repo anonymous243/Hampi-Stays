@@ -173,12 +173,12 @@ export function BookingConfirmationPage() {
     doc.text("SCAN TO VERIFY", 165, currentY + 10, { align: 'center' });
     
     try {
-      const qrData = `HS-CONFIRMATION|${safeRef}|${cleanGuestName}|${resortName}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(qrData, { 
+      const qrUrl = `${window.location.origin}/dashboard/bookings`;
+      const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { 
         margin: 1, 
         width: 200, 
         color: { dark: '#0A0F1E', light: '#FFFFFF' },
-        errorCorrectionLevel: 'M'
+        errorCorrectionLevel: 'H'
       });
       doc.addImage(qrCodeDataUrl, 'PNG', 150, currentY + 13, 30, 30);
     } catch (err) {
