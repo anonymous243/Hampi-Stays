@@ -57,7 +57,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // ============================================================
 // OTP SERVICE INITIALIZATION
 // ============================================================
-const resend = new Resend(process.env.RESEND_API_KEY || '');
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@hampistays.com';
 
 // Twilio (optional - graceful degradation if not configured)
@@ -126,6 +127,10 @@ const sendEmailOtp = async (email, otp, name = 'Valued Guest') => {
     </body>
     </html>
   `;
+  if (!resend) {
+    console.warn('Resend not configured — Email OTP skipped');
+    return { success: false, reason: 'Email provider not configured' };
+  }
   return resend.emails.send({
     from: EMAIL_FROM,
     to: email,
@@ -436,6 +441,11 @@ app.post('/api/auth/send-email-otp', otpSendLimiter, async (req, res) => {
     });
 
     await sendEmailOtp(email, otp, user?.name || 'Valued Guest');
+
+    if (!resend) {
+      // Dev mode: return OTP in response if Email not configured
+      return res.json({ success: true, message: `OTP generated (Email not configured)`, devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined });
+    }
 
     res.json({ success: true, message: `Verification code sent to ${email}` });
   } catch (error) {
