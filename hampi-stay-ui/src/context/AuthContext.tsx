@@ -19,6 +19,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<any>;
   loginWithGoogle: (credential: string) => Promise<any>;
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showAuthModal, _setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
 
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
+    setIsLoading(false);
   }, []);
 
   const setShowAuthModal = (show: boolean, view: "login" | "register" = "login") => {
@@ -155,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      isLoading,
       isAuthenticated: !!user, 
       login, 
       loginWithGoogle, 
