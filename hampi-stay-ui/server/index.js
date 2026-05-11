@@ -13,7 +13,8 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import { Resend } from 'resend';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
@@ -45,7 +46,7 @@ const razorpay = new Razorpay({
 
 
 app.use(cors({
-  origin: "*", // Adjust this to your specific frontend URL in production for better security
+  origin: "*",
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -53,8 +54,110 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// ============================================================
+// OTP SERVICE INITIALIZATION
+// ============================================================
+const resend = new Resend(process.env.RESEND_API_KEY || '');
+const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@hampistays.com';
+
+// Twilio (optional - graceful degradation if not configured)
+let twilioClient = null;
+try {
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    const twilio = await import('twilio');
+    twilioClient = twilio.default(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  }
+} catch (e) { /* Twilio not configured */ }
+
+// OTP Rate Limiters
+const otpSendLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 minute
+  max: 3,                     // max 3 OTP sends per minute per IP
+  message: { error: 'Too many OTP requests. Please wait before requesting again.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const otpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 10,                    // max 10 verify attempts per 15 min per IP
+  message: { error: 'Too many verification attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// OTP Helper Functions
+const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+const hashOtp = async (otp) => bcrypt.hash(otp, 10);
+const verifyOtpHash = async (otp, hash) => bcrypt.compare(otp, hash);
+
+const sendEmailOtp = async (email, otp, name = 'Valued Guest') => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0;padding:0;background:#F5F0E8;font-family:'Georgia',serif;">
+      <div style="max-width:560px;margin:40px auto;background:#0A0F1E;border-radius:24px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#0A0F1E 0%,#1a2540 100%);padding:48px 40px 32px;text-align:center;border-bottom:1px solid rgba(212,175,55,0.3);">
+          <p style="color:#D4AF37;font-size:11px;font-weight:700;letter-spacing:4px;text-transform:uppercase;margin:0 0 12px;">HampiStays</p>
+          <h1 style="color:#F5F0E8;font-size:26px;margin:0;font-weight:400;letter-spacing:1px;">Verify Your Identity</h1>
+        </div>
+        <div style="padding:40px;">
+          <p style="color:#F5F0E8;font-size:15px;margin:0 0 8px;">Dear ${name},</p>
+          <p style="color:rgba(245,240,232,0.6);font-size:14px;margin:0 0 32px;line-height:1.6;">
+            Use the code below to complete your verification. This code expires in <strong style="color:#D4AF37;">5 minutes</strong>.
+          </p>
+          <div style="background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:16px;padding:32px;text-align:center;margin-bottom:32px;">
+            <p style="color:rgba(245,240,232,0.4);font-size:10px;letter-spacing:4px;text-transform:uppercase;margin:0 0 12px;">Your Verification Code</p>
+            <p style="color:#D4AF37;font-size:48px;font-weight:700;letter-spacing:16px;margin:0;font-family:'Courier New',monospace;">${otp}</p>
+          </div>
+          <div style="background:rgba(255,100,100,0.06);border-left:3px solid rgba(255,100,100,0.4);border-radius:8px;padding:16px;margin-bottom:24px;">
+            <p style="color:rgba(245,240,232,0.5);font-size:12px;margin:0;line-height:1.6;">
+              🔒 <strong style="color:rgba(245,240,232,0.8);">Security Notice:</strong> Never share this code with anyone. HampiStays will never ask for your OTP.
+            </p>
+          </div>
+          <p style="color:rgba(245,240,232,0.3);font-size:11px;text-align:center;margin:0;">
+            If you did not request this, please ignore this email or contact support.
+          </p>
+        </div>
+        <div style="padding:24px 40px;border-top:1px solid rgba(212,175,55,0.15);text-align:center;">
+          <p style="color:rgba(245,240,232,0.2);font-size:10px;letter-spacing:2px;text-transform:uppercase;margin:0;">© 2026 HampiStays Luxury Stays · Hampi, Karnataka</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  return resend.emails.send({
+    from: EMAIL_FROM,
+    to: email,
+    subject: `${otp} – Your HampiStays Verification Code`,
+    html
+  });
+};
+
+const sendSmsOtp = async (phone, otp) => {
+  if (!twilioClient) {
+    console.warn('Twilio not configured — SMS OTP skipped');
+    return { success: false, reason: 'SMS provider not configured' };
+  }
+  return twilioClient.messages.create({
+    body: `Your HampiStays verification code is: ${otp}. Valid for 5 minutes. Do not share this code.`,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: phone.startsWith('+') ? phone : `+91${phone}`
+  });
+};
+
+// Cleanup expired OTPs (runs at startup and every 30 min)
+const cleanupExpiredOtps = async () => {
+  try {
+    await prisma.otpVerification.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+  } catch (e) { /* silent */ }
+};
+cleanupExpiredOtps();
+setInterval(cleanupExpiredOtps, 30 * 60 * 1000);
+
 // Health Check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+
 
 // Image Upload Endpoint
 app.post('/api/upload', upload.single('image'), (req, res) => {
@@ -291,6 +394,188 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     res.json({ message: 'Reset link sent successfully.' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to process request.' });
+  }
+});
+
+// ============================================================
+// OTP VERIFICATION SYSTEM
+// ============================================================
+
+// POST /api/auth/send-email-otp
+app.post('/api/auth/send-email-otp', otpSendLimiter, async (req, res) => {
+  try {
+    const { email, userId } = req.body;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'A valid email address is required.' });
+    }
+
+    // Cancel any existing unverified OTPs for this email
+    await prisma.otpVerification.deleteMany({
+      where: { email, otpType: 'email', verified: false }
+    });
+
+    // Check cooldown (60 seconds since last send)
+    const recent = await prisma.otpVerification.findFirst({
+      where: { email, otpType: 'email', createdAt: { gt: new Date(Date.now() - 60000) } },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (recent) {
+      const secondsLeft = Math.ceil((60000 - (Date.now() - recent.createdAt.getTime())) / 1000);
+      return res.status(429).json({ error: `Please wait ${secondsLeft}s before requesting a new OTP.`, secondsLeft });
+    }
+
+    const otp = generateOtp();
+    const otpHash = await hashOtp(otp);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    // Fetch user name for personalized email
+    const user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+
+    await prisma.otpVerification.create({
+      data: { userId: userId || null, email, otpHash, otpType: 'email', expiresAt }
+    });
+
+    await sendEmailOtp(email, otp, user?.name || 'Valued Guest');
+
+    res.json({ success: true, message: `Verification code sent to ${email}` });
+  } catch (error) {
+    console.error('Send Email OTP Error:', error);
+    res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+  }
+});
+
+// POST /api/auth/send-mobile-otp
+app.post('/api/auth/send-mobile-otp', otpSendLimiter, async (req, res) => {
+  try {
+    const { phone, userId } = req.body;
+    if (!phone || !/^[6-9]\d{9}$/.test(phone.replace(/\D/g, '').slice(-10))) {
+      return res.status(400).json({ error: 'A valid 10-digit Indian mobile number is required.' });
+    }
+    const normalizedPhone = phone.replace(/\D/g, '').slice(-10);
+
+    await prisma.otpVerification.deleteMany({
+      where: { phone: normalizedPhone, otpType: 'mobile', verified: false }
+    });
+
+    const recent = await prisma.otpVerification.findFirst({
+      where: { phone: normalizedPhone, otpType: 'mobile', createdAt: { gt: new Date(Date.now() - 60000) } },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (recent) {
+      const secondsLeft = Math.ceil((60000 - (Date.now() - recent.createdAt.getTime())) / 1000);
+      return res.status(429).json({ error: `Please wait ${secondsLeft}s before requesting a new OTP.`, secondsLeft });
+    }
+
+    const otp = generateOtp();
+    const otpHash = await hashOtp(otp);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await prisma.otpVerification.create({
+      data: { userId: userId || null, phone: normalizedPhone, otpHash, otpType: 'mobile', expiresAt }
+    });
+
+    const smsResult = await sendSmsOtp(normalizedPhone, otp);
+
+    if (!twilioClient) {
+      // Dev mode: return OTP in response if SMS not configured
+      return res.json({ success: true, message: `OTP generated (SMS not configured)`, devOtp: process.env.NODE_ENV !== 'production' ? otp : undefined });
+    }
+
+    res.json({ success: true, message: `Verification code sent to +91${normalizedPhone}` });
+  } catch (error) {
+    console.error('Send Mobile OTP Error:', error);
+    res.status(500).json({ error: 'Failed to send SMS. Please try email verification instead.' });
+  }
+});
+
+// POST /api/auth/verify-otp
+app.post('/api/auth/verify-otp', otpVerifyLimiter, async (req, res) => {
+  try {
+    const { otp, email, phone, otpType, userId } = req.body;
+    if (!otp || otp.length !== 6) return res.status(400).json({ error: 'Please enter the 6-digit code.' });
+    if (!otpType || !['email', 'mobile'].includes(otpType)) return res.status(400).json({ error: 'Invalid OTP type.' });
+
+    const whereClause = otpType === 'email'
+      ? { email, otpType: 'email', verified: false }
+      : { phone: phone?.replace(/\D/g, '').slice(-10), otpType: 'mobile', verified: false };
+
+    const record = await prisma.otpVerification.findFirst({
+      where: whereClause,
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!record) return res.status(400).json({ error: 'No active OTP found. Please request a new code.' });
+    if (new Date() > record.expiresAt) {
+      await prisma.otpVerification.delete({ where: { id: record.id } });
+      return res.status(400).json({ error: 'OTP has expired. Please request a new code.' });
+    }
+    if (record.attempts >= 5) {
+      await prisma.otpVerification.delete({ where: { id: record.id } });
+      return res.status(429).json({ error: 'Too many failed attempts. Please request a new OTP.' });
+    }
+
+    const isValid = await verifyOtpHash(otp, record.otpHash);
+    if (!isValid) {
+      await prisma.otpVerification.update({
+        where: { id: record.id },
+        data: { attempts: { increment: 1 } }
+      });
+      const remaining = 5 - (record.attempts + 1);
+      return res.status(400).json({ error: `Invalid code. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` });
+    }
+
+    // Mark OTP as verified
+    await prisma.otpVerification.update({ where: { id: record.id }, data: { verified: true } });
+
+    // Update user verification status
+    const targetUserId = userId || record.userId;
+    if (targetUserId) {
+      const updateData = otpType === 'email' ? { isEmailVerified: true } : { isMobileVerified: true };
+      await prisma.user.update({ where: { id: targetUserId }, data: updateData });
+    }
+
+    // If userId provided, return a fresh JWT
+    if (targetUserId) {
+      const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+      if (user) {
+        const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+        const { passwordHash, ...safeUser } = user;
+        return res.json({ success: true, verified: true, token, user: safeUser });
+      }
+    }
+
+    res.json({ success: true, verified: true, message: 'Verification successful.' });
+  } catch (error) {
+    console.error('Verify OTP Error:', error);
+    res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+});
+
+// POST /api/auth/resend-otp
+app.post('/api/auth/resend-otp', otpSendLimiter, async (req, res) => {
+  try {
+    const { email, phone, otpType, userId } = req.body;
+    if (otpType === 'email') {
+      return res.redirect(307, '/api/auth/send-email-otp');
+    } else {
+      return res.redirect(307, '/api/auth/send-mobile-otp');
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to resend OTP.' });
+  }
+});
+
+// GET /api/admin/otp-logs (Admin only)
+app.get('/api/admin/otp-logs', async (req, res) => {
+  try {
+    const logs = await prisma.otpVerification.findMany({
+      take: 100,
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { name: true, email: true, role: true } } }
+    });
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch OTP logs.' });
   }
 });
 

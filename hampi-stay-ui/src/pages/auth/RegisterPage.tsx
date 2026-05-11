@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { ArrowLeft, Luggage, Key, Check, Users } from "lucide-react";
+import { ArrowLeft, Luggage, Key, Check, Users, Mail, Smartphone, ShieldCheck, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
@@ -64,6 +64,24 @@ export function RegisterPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [verificationMethod, setVerificationMethod] = useState<"email" | "sms" | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [verifiedSuccess, setVerifiedSuccess] = useState(false);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startCountdown = useCallback(() => {
+    setCountdown(60);
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { clearInterval(countdownRef.current!); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
   const handleNext = () => {
     if (role) setStep(2);
@@ -74,59 +92,88 @@ export function RegisterPage() {
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
-
-    // Password Strength Check
     const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{9,}$/;
     if (!passwordRegex.test(formData.password)) {
       return setError("Password must be at least 9 characters and include at least one special character.");
     }
-
-    if (!formData.terms) {
-      return setError("You must agree to the terms");
-    }
-
+    if (!formData.terms) return setError("You must agree to the terms");
     setError("");
     try {
-      // Check if email already exists before proceeding
       const response = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
       });
-      
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Validation failed');
-      
-      // Email is available, proceed to verification selection
       setStep(3);
     } catch (err: any) {
       setError(err.message);
     }
   };
 
+  const sendOtp = async (method: "email" | "sms") => {
+    setIsSendingOtp(true);
+    setError("");
+    try {
+      const endpoint = method === "email" ? '/api/auth/send-email-otp' : '/api/auth/send-mobile-otp';
+      const body = method === "email"
+        ? { email: formData.email }
+        : { phone: formData.phone };
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      startCountdown();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleStartVerification = async (method: "email" | "sms") => {
+    setVerificationMethod(method);
+    setOtp(["", "", "", "", "", ""]);
+    setStep(4);
+    await sendOtp(method);
+  };
+
   const handleVerifyOtp = async () => {
     setIsVerifying(true);
     setError("");
     try {
-      // Simulate OTP verification
       const enteredOtp = otp.join("");
-      if (enteredOtp === "123456") { // Mock success code
-        const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
-        await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
-        navigate("/dashboard");
-      } else {
-        throw new Error("Invalid verification code. Please try again.");
-      }
+      if (enteredOtp.length !== 6) throw new Error("Please enter the complete 6-digit code.");
+
+      // First register the user account
+      const apiRole = role === "guest" ? "TRAVELLER" : role === "owner" ? "RESORT_OWNER" : "GUIDE";
+      await register(formData.name, formData.email, formData.phone, formData.password, apiRole as any);
+
+      // Then verify OTP against backend
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          otp: enteredOtp,
+          otpType: verificationMethod === 'email' ? 'email' : 'mobile',
+          email: verificationMethod === 'email' ? formData.email : undefined,
+          phone: verificationMethod === 'sms' ? formData.phone : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Verification failed');
+
+      setVerifiedSuccess(true);
+      setTimeout(() => navigate("/dashboard"), 1800);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsVerifying(false);
     }
-  };
-
-  const handleStartVerification = (method: "email" | "sms") => {
-    setVerificationMethod(method);
-    setStep(4); // In a real app, this would trigger the backend to send OTP
   };
 
   const onGoogleSuccess = async (response: any) => {
@@ -576,63 +623,138 @@ export function RegisterPage() {
                   initial="hidden"
                   animate="show"
                   exit="exit"
-                  className="space-y-8"
+                  className="space-y-6"
                 >
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gold-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-gold-600">
-                      <Key className="w-8 h-8" />
-                    </div>
-                    <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Verify your {verificationMethod === 'email' ? 'Email' : 'Mobile'}</h2>
-                    <p className="text-navy-800/60 text-sm font-medium">
-                      Enter the 6-digit code sent to your {verificationMethod === 'email' ? 'inbox' : 'device'}.
-                    </p>
-                  </div>
+                  <AnimatePresence mode="wait">
+                    {verifiedSuccess ? (
+                      <motion.div
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-center py-8"
+                      >
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                          className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6"
+                        >
+                          <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                        </motion.div>
+                        <h2 className="text-2xl font-serif font-bold text-navy-950 mb-2">Verified!</h2>
+                        <p className="text-navy-800/60 text-sm">Your identity has been confirmed. Redirecting...</p>
+                      </motion.div>
+                    ) : (
+                      <motion.div key="form" className="space-y-6">
+                        <div className="text-center">
+                          <div className={cn(
+                            "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
+                            verificationMethod === 'email' ? "bg-gold-50 text-gold-600" : "bg-navy-50 text-navy-600"
+                          )}>
+                            {verificationMethod === 'email' ? <Mail className="w-8 h-8" /> : <Smartphone className="w-8 h-8" />}
+                          </div>
+                          <h2 className="text-2xl font-serif font-bold text-navy-950 mb-1">
+                            Verify your {verificationMethod === 'email' ? 'Email' : 'Mobile'}
+                          </h2>
+                          <p className="text-navy-800/50 text-sm">
+                            Code sent to <span className="font-bold text-navy-950">{verificationMethod === 'email' ? formData.email : formData.phone}</span>
+                          </p>
+                        </div>
 
-                  <div className="flex justify-between gap-2 md:gap-3">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        id={`otp-${index}`}
-                        type="text"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/[^0-9]/.test(value)) return;
-                          const newOtp = [...otp];
-                          newOtp[index] = value;
-                          setOtp(newOtp);
-                          
-                          // Auto focus next
-                          if (value && index < 5) {
-                            document.getElementById(`otp-${index + 1}`)?.focus();
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Backspace" && !otp[index] && index > 0) {
-                            document.getElementById(`otp-${index - 1}`)?.focus();
-                          }
-                        }}
-                        className="w-full h-14 md:h-16 text-center text-xl font-bold bg-white border-2 border-sand-200 rounded-2xl focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10 outline-none transition-all text-navy-950"
-                      />
-                    ))}
-                  </div>
+                        {error && (
+                          <motion.p
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="text-red-500 text-sm font-bold bg-red-50 border border-red-100 p-3 rounded-xl text-center"
+                          >
+                            {error}
+                          </motion.p>
+                        )}
 
-                  <div className="space-y-4">
-                    <Button
-                      onClick={handleVerifyOtp}
-                      isLoading={isVerifying}
-                      className="w-full h-14 rounded-2xl bg-navy-950 text-white shadow-luxury"
-                    >
-                      Verify & Finish
-                    </Button>
-                    <button 
-                      onClick={() => setStep(3)}
-                      className="w-full text-center text-sm font-bold text-navy-800/40 hover:text-navy-950 transition-colors"
-                    >
-                      Resend code in 45s
-                    </button>
-                  </div>
+                        {isSendingOtp ? (
+                          <div className="flex items-center justify-center gap-3 py-6">
+                            <div className="w-5 h-5 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm text-navy-800/60">Sending code...</p>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between gap-2 md:gap-3">
+                            {otp.map((digit, index) => (
+                              <input
+                                key={index}
+                                ref={el => { otpRefs.current[index] = el; }}
+                                id={`otp-${index}`}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={1}
+                                value={digit}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/[^0-9]/g, '');
+                                  const newOtp = [...otp];
+                                  newOtp[index] = value;
+                                  setOtp(newOtp);
+                                  if (value && index < 5) otpRefs.current[index + 1]?.focus();
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Backspace" && !otp[index] && index > 0) {
+                                    otpRefs.current[index - 1]?.focus();
+                                  }
+                                }}
+                                onPaste={(e) => {
+                                  const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
+                                  if (pasted.length === 6) {
+                                    setOtp(pasted.split(''));
+                                    otpRefs.current[5]?.focus();
+                                    e.preventDefault();
+                                  }
+                                }}
+                                className={cn(
+                                  "w-full h-14 md:h-16 text-center text-xl font-bold border-2 rounded-2xl outline-none transition-all text-navy-950",
+                                  digit ? "bg-navy-950 text-white border-navy-950 shadow-luxury" : "bg-white border-sand-200 focus:border-gold-500 focus:ring-4 focus:ring-gold-500/10"
+                                )}
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="space-y-3">
+                          <Button
+                            onClick={handleVerifyOtp}
+                            isLoading={isVerifying}
+                            disabled={otp.join('').length !== 6 || isSendingOtp}
+                            className="w-full h-14 rounded-2xl bg-navy-950 text-white shadow-luxury"
+                          >
+                            <ShieldCheck className="w-5 h-5 mr-2" />
+                            Verify & Complete Registration
+                          </Button>
+
+                          <div className="flex items-center justify-center gap-2">
+                            {countdown > 0 ? (
+                              <p className="text-sm text-navy-800/40 text-center">
+                                Resend available in
+                                <span className="font-bold text-navy-950 ml-1">{countdown}s</span>
+                              </p>
+                            ) : (
+                              <button
+                                onClick={() => sendOtp(verificationMethod!)}
+                                disabled={isSendingOtp}
+                                className="flex items-center gap-2 text-sm font-bold text-gold-600 hover:text-gold-500 transition-colors"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Resend Code
+                              </button>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => { setStep(3); setOtp(["","","","","",""]); setError(""); }}
+                            className="w-full text-center text-xs font-bold text-navy-800/30 hover:text-navy-800/60 transition-colors"
+                          >
+                            Use a different verification method
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               )}
             </AnimatePresence>

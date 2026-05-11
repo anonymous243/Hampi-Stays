@@ -4,12 +4,12 @@ import {
   ShieldCheck, CheckCircle, XCircle, ExternalLink, MapPin, 
   User, Mail, LayoutDashboard, Building2, Users, CalendarDays, 
   TrendingUp, Star, AlertCircle, Search, Filter, Sparkles, Download, Award,
-  Eye, EyeOff, Loader2
+  Eye, EyeOff, Loader2, KeyRound, Smartphone, BadgeCheck
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 
-type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews";
+type AdminTab = "overview" | "properties" | "guides" | "users" | "bookings" | "payouts" | "newsletter" | "security" | "reviews" | "otp-logs";
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -33,6 +33,7 @@ export function AdminDashboard() {
   const [editingCommissionId, setEditingCommissionId] = useState<string | null>(null);
   const [newCommissionRate, setNewCommissionRate] = useState<number>(7.0);
   const [isSavingCommission, setIsSavingCommission] = useState(false);
+  const [otpLogs, setOtpLogs] = useState<any[]>([]);
 
   useEffect(() => {
     fetchInitialData();
@@ -56,7 +57,7 @@ export function AdminDashboard() {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes, payoutsRes, securityRes] = await Promise.all([
+      const [pendingRes, activeRes, usersRes, statsRes, bookingsRes, guidesRes, settingsRes, payoutsRes, securityRes, otpLogsRes] = await Promise.all([
         fetch("/api/admin/resorts/pending"),
         fetch("/api/admin/resorts/active"),
         fetch("/api/users/list"),
@@ -66,7 +67,8 @@ export function AdminDashboard() {
         fetch("/api/settings"),
         fetch("/api/admin/payouts"),
         fetch("/api/admin/security/stats"),
-        fetch("/api/admin/reviews/flagged")
+        fetch("/api/admin/reviews/flagged"),
+        fetch("/api/admin/otp-logs")
       ]);
       
       if (pendingRes.ok) setPendingResorts(await pendingRes.json());
@@ -80,6 +82,7 @@ export function AdminDashboard() {
       }
       if (payoutsRes.ok) setPendingPayouts(await payoutsRes.json());
       if (securityRes.ok) setSecurityData(await securityRes.json());
+      if (otpLogsRes.ok) setOtpLogs(await otpLogsRes.json());
       if (pendingRes.ok && usersRes.ok) { // Check for reviews res
           const reviewsRes = await fetch("/api/admin/reviews/flagged");
           if (reviewsRes.ok) setFlaggedReviews(await reviewsRes.json());
@@ -1273,6 +1276,92 @@ export function AdminDashboard() {
     </div>
   );
 
+  const renderOtpLogs = () => (
+    <div className="space-y-8">
+      <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-2xl font-bold text-navy-950">OTP Verification Logs</h3>
+            <p className="text-sm text-navy-950/40">Real-time audit trail of all identity verification attempts.</p>
+          </div>
+          <div className="flex gap-3">
+            <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-bold">
+              {otpLogs.filter(l => l.verified).length} Verified
+            </div>
+            <div className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-bold">
+              {otpLogs.filter(l => l.attempts >= 3).length} Suspicious
+            </div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-sand-50/50 text-[10px] font-bold text-navy-950/40 uppercase tracking-widest">
+                <th className="px-6 py-4">User</th>
+                <th className="px-6 py-4">Channel</th>
+                <th className="px-6 py-4">Target</th>
+                <th className="px-6 py-4">Attempts</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Expires</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-sand-100">
+              {otpLogs.map((log) => (
+                <tr key={log.id} className={`hover:bg-sand-50/30 transition-colors ${
+                  log.attempts >= 3 ? 'bg-red-50/20' : ''
+                }`}>
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="text-sm font-bold text-navy-950">{log.user?.name || 'Unregistered'}</p>
+                      <p className="text-xs text-navy-950/40">{log.user?.role || '—'}</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`flex items-center gap-1.5 text-xs font-bold ${
+                      log.otpType === 'email' ? 'text-gold-700' : 'text-navy-600'
+                    }`}>
+                      {log.otpType === 'email' ? <Mail className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
+                      {log.otpType === 'email' ? 'Email' : 'Mobile'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-xs font-mono text-navy-950/70">{log.email || log.phone || '—'}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                      log.attempts >= 4 ? 'bg-red-100 text-red-700' :
+                      log.attempts >= 2 ? 'bg-amber-100 text-amber-700' :
+                      'bg-sand-100 text-navy-950/60'
+                    }`}>
+                      {log.attempts}/5
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    {log.verified ? (
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                        <BadgeCheck className="w-4 h-4" /> Verified
+                      </span>
+                    ) : new Date() > new Date(log.expiresAt) ? (
+                      <span className="text-xs font-bold text-red-500">Expired</span>
+                    ) : (
+                      <span className="text-xs font-bold text-amber-600">Pending</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-xs text-navy-950/40">
+                    {new Date(log.expiresAt).toLocaleTimeString()}
+                  </td>
+                </tr>
+              ))}
+              {otpLogs.length === 0 && (
+                <tr><td colSpan={6} className="px-6 py-20 text-center text-navy-950/30 italic">No OTP verification records yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderReviews = () => (
     <div className="space-y-8">
       <div className="bg-white rounded-[2.5rem] p-8 border border-sand-200 shadow-sm">
@@ -1341,6 +1430,7 @@ export function AdminDashboard() {
               { id: "guides", label: "Guides", icon: Award },
               { id: "users", label: "Users", icon: Users },
               { id: "bookings", label: "Bookings", icon: CalendarDays },
+              { id: "otp-logs", label: "OTP Logs", icon: KeyRound },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1377,6 +1467,7 @@ export function AdminDashboard() {
             {activeTab === "payouts" && renderPayouts()}
             {activeTab === "newsletter" && renderNewsletter()}
             {activeTab === "security" && renderSecurity()}
+            {activeTab === "otp-logs" && renderOtpLogs()}
             {activeTab === "reviews" && renderReviews()}
           </motion.div>
         )}

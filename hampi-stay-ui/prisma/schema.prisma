@@ -35,28 +35,47 @@ enum BookingStatus {
 // ============================================================
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  passwordHash  String
-  role          Role      @default(TRAVELLER)
-  avatar        String?
-  phone         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  passwordHash      String
+  role              Role      @default(TRAVELLER)
+  avatar            String?
+  phone             String?
+  isEmailVerified   Boolean   @default(false)
+  isMobileVerified  Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  bookings      Booking[]
-  wishlist      Wishlist[]
-  reviews       Review[]
-  notifications Notification[]
-  ownerProfile  ResortOwner?
-  guideProfile  GuideProfile?
-  guideBookings GuideBooking[]
-  messages      Message[]
-  staffProfile  StaffMember?
+  bookings          Booking[]
+  wishlist          Wishlist[]
+  reviews           Review[]
+  notifications     Notification[]
+  ownerProfile      ResortOwner?
+  guideProfile      GuideProfile?
+  guideBookings     GuideBooking[]
+  messages          Message[]
+  staffProfile      StaffMember?
+  otpVerifications  OtpVerification[]
 
   @@map("users")
+}
+
+model OtpVerification {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email       String?
+  phone       String?
+  otpHash     String
+  otpType     String   // "email" | "mobile"
+  expiresAt   DateTime
+  verified    Boolean  @default(false)
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("otp_verifications")
 }
 
 enum ResortStatus {
