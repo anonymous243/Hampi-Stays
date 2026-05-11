@@ -4,6 +4,7 @@ import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 import { MobileDock } from "./components/layout/MobileDock";
 import { AuthModal } from "./components/auth/AuthModal";
+import { CookieConsent } from "./components/layout/CookieConsent";
 
 // Public Pages
 import { LandingPage } from "./pages/public/LandingPage";
@@ -18,6 +19,7 @@ import { TermsOfServicePage } from "./pages/public/TermsOfServicePage";
 import { PrivacyPolicyPage } from "./pages/public/PrivacyPolicyPage";
 import { LocalExpertsPage } from "./pages/public/LocalExpertsPage";
 import { DiscoveryPage } from "./pages/public/DiscoveryPage";
+import { CookiesPage } from "./pages/public/CookiesPage";
 import { NotFoundPage } from "./pages/public/NotFoundPage";
 
 // Auth Pages
@@ -172,6 +174,7 @@ function AnimatedRoutes() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/cookies" element={<CookiesPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
@@ -186,6 +189,7 @@ function App() {
       <ScrollToTop />
       <AnimatedRoutes />
       <AuthModal />
+      <CookieConsent />
     </Router>
   );
 }
