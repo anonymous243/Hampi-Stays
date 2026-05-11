@@ -1,17 +1,42 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/Button";
 import { Link } from "react-router-dom";
 
+const images = [
+  "/images/hampi-3.png",
+  "/images/hampi-1.png",
+  "/images/hampi-4.png",
+  "/images/hampi-6.png",
+];
+
 export function CTASection() {
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % images.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <section className="py-32 md:py-48 relative overflow-hidden">
-      {/* Full-width Section Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-fixed"
-        style={{
-          backgroundImage: "url('/images/hampi-3.png')",
-        }}
-      />
+    <section className="py-32 md:py-48 relative overflow-hidden bg-navy-950">
+      {/* Dynamic Background Slideshow */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={images[currentIdx]}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 2, ease: "easeOut" }}
+          className="absolute inset-0 bg-cover bg-center bg-fixed"
+          style={{
+            backgroundImage: `url('${images[currentIdx]}')`,
+          }}
+        />
+      </AnimatePresence>
+      
       {/* Dark overlay for the background */}
       <div className="absolute inset-0 bg-navy-950/70 backdrop-blur-[2px]" />
 
