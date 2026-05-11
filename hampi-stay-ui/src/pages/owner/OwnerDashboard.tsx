@@ -115,10 +115,10 @@ export function OwnerDashboard() {
         body: JSON.stringify({ url: photoUrl })
       });
       fetchResorts();
-    } catch (error) {
-      console.error(error);
     }
-    const handleDownloadInvoice = async (booking: any) => {
+  };
+
+  const handleDownloadInvoice = async (booking: any) => {
     const doc = new jsPDF();
     const safeRef = booking.referenceNumber || "HS-STAY";
     const issueDate = new Date().toLocaleDateString("en-IN");
@@ -256,7 +256,7 @@ export function OwnerDashboard() {
     doc.text("HampiStays Partner Network | Hampi, Karnataka | help@hampistays.com", 105, footerY + 14, { align: 'center' });
 
     doc.save(`HampiStays_Invoice_${safeRef}.pdf`);
-  };  };
+  };
 
   const handleDownloadConfirmation = async (booking: any) => {
     const doc = new jsPDF();
