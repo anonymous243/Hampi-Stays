@@ -1,13 +1,27 @@
 import { motion } from "framer-motion";
-
-const stats = [
-  { value: "50+", label: "Luxury Villas" },
-  { value: "10k+", label: "Happy Guests" },
-  { value: "15+", label: "Curated Experiences" },
-  { value: "4.9", label: "Average Rating" },
-];
+import { useState, useEffect } from "react";
 
 export function Statistics() {
+  const [stats, setStats] = useState([
+    { value: "50+", label: "Luxury Villas", key: "resorts" },
+    { value: "10k+", label: "Happy Guests", key: "guests" },
+    { value: "15+", label: "Curated Experiences", key: "experiences" },
+    { value: "4.9", label: "Average Rating", key: "rating" },
+  ]);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => {
+        setStats([
+          { value: data.resorts, label: "Luxury Villas", key: "resorts" },
+          { value: data.guests, label: "Happy Guests", key: "guests" },
+          { value: data.experiences, label: "Curated Experiences", key: "experiences" },
+          { value: data.rating, label: "Average Rating", key: "rating" },
+        ]);
+      })
+      .catch(err => console.error("Stats fetch failed", err));
+  }, []);
   return (
     <section className="py-24 bg-sand-50 relative overflow-hidden">
       {/* Subtle bottom border with gradient */}

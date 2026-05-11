@@ -32,9 +32,8 @@ import { BookingsPage } from "./pages/traveler/BookingsPage";
 import { WishlistPage } from "./pages/traveler/WishlistPage";
 import { ProfilePage } from "./pages/traveler/ProfilePage";
 import { NotificationsPage } from "./pages/traveler/NotificationsPage";
-import { DashboardSelector } from "./components/shared/DashboardSelector";
-import { ResortSetupPage } from "./pages/owner/ResortSetupPage";
 import { InventoryPage } from "./pages/owner/InventoryPage";
+import { ScrollToTop } from "./components/shared/ScrollToTop";
 
 import { useAuth } from "./context/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -178,6 +177,7 @@ function AnimatedRoutes() {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AnimatedRoutes />
       <AuthModal />
     </Router>

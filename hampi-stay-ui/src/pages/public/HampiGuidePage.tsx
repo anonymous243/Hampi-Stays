@@ -1,56 +1,34 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   MapPin, Clock, Camera, 
-  Info, Compass,
+  Info, Compass, Loader2,
   Sunrise, ShieldCheck, Map as MapIcon
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 
-const attractions = [
-  {
-    id: "virupaksha",
-    title: "Virupaksha Temple",
-    category: "Historical",
-    description: "The oldest and most sacred temple in Hampi, dedicated to Lord Shiva. Its towering gopuram (gateway) is visible from miles away and has survived centuries of change.",
-    timing: "6:00 AM - 8:00 PM",
-    fee: "₹50 (Indians) / ₹500 (Foreigners)",
-    image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
-    highlights: ["Inverted shadow of the gopuram", "Ancient inscriptions", "Live temple elephant 'Lakshmi'"]
-  },
-  {
-    id: "vitthala",
-    title: "Vitthala Temple & Stone Chariot",
-    category: "Iconic",
-    description: "The pinnacle of Vijayanagara architecture. Home to the legendary Stone Chariot and the musical pillars that produce melodic notes when tapped.",
-    timing: "8:30 AM - 5:30 PM",
-    fee: "Included in Hampi Heritage ticket",
-    image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
-    highlights: ["The Stone Chariot", "Musical Pillars", "Elaborate carvings of Maha Mantapa"]
-  },
-  {
-    id: "matanga",
-    title: "Matanga Hill",
-    category: "Adventure",
-    description: "The highest point in Hampi, offering unparalleled panoramic views of the entire heritage site. It's the most popular spot for sunrise and sunset.",
-    timing: "Open 24/7 (Recommended: Sunrise/Sunset)",
-    fee: "Free",
-    image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
-    highlights: ["360-degree panorama", "Veerabhadra Temple at summit", "Breathtaking sunset views"]
-  },
-  {
-    id: "lotus-mahal",
-    title: "Lotus Mahal & Elephant Stables",
-    category: "Royal",
-    description: "Part of the Zenana Enclosure, this two-storied pavilion is a unique blend of Indo-Islamic architecture, designed to resemble a lotus bud.",
-    timing: "8:30 AM - 5:30 PM",
-    fee: "Included in Hampi Heritage ticket",
-    image: "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=80&w=2000",
-    highlights: ["Indo-Islamic design", "Water cooling system", "Grand Elephant Stables nearby"]
-  }
-];
-
 export function HampiGuidePage() {
+  const [attractions, setAttractions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAttractions = async () => {
+      try {
+        const res = await fetch('/api/heritage/attractions');
+        if (res.ok) {
+          const data = await res.json();
+          setAttractions(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch heritage sites", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAttractions();
+  }, []);
+
   return (
     <div className="min-h-screen bg-sand-50">
       {/* Hero Section */}
@@ -83,7 +61,12 @@ export function HampiGuidePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Main List */}
           <div className="lg:col-span-8 space-y-16">
-            {attractions.map((site, i) => (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="w-12 h-12 animate-spin text-gold-500 mb-4" />
+                <p className="text-navy-950/40 font-bold uppercase tracking-widest text-sm">Loading Heritage Sites...</p>
+              </div>
+            ) : attractions.map((site, i) => (
               <motion.div key={site.id} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="group bg-white rounded-[3rem] border border-sand-100 overflow-hidden shadow-sm hover:shadow-luxury transition-all duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-2">
@@ -109,7 +92,7 @@ export function HampiGuidePage() {
                     </div>
 
                     <div className="space-y-2 mb-8">
-                      {site.highlights.map(h => (
+                      {site.highlights.map((h: string) => (
                         <div key={h} className="flex items-center gap-2 text-sm text-navy-950/60">
                           <ShieldCheck className="w-4 h-4 text-green-600" /> {h}
                         </div>

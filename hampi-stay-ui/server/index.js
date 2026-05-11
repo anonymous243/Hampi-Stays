@@ -421,6 +421,133 @@ app.get('/api/users/:userId/notifications', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
+  
+  // ============================================================
+  // DISCOVERY & HERITAGE ROUTES
+  // ============================================================
+  
+  const ATTRACTIONS = [
+    {
+      id: "virupaksha",
+      title: "Virupaksha Temple",
+      category: "Historical",
+      description: "The oldest and most sacred temple in Hampi, dedicated to Lord Shiva. Its towering gopuram (gateway) is visible from miles away and has survived centuries of change.",
+      timing: "6:00 AM - 8:00 PM",
+      fee: "₹50 (Indians) / ₹500 (Foreigners)",
+      image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
+      highlights: ["Inverted shadow of the gopuram", "Ancient inscriptions", "Live temple elephant 'Lakshmi'"]
+    },
+    {
+      id: "vitthala",
+      title: "Vitthala Temple & Stone Chariot",
+      category: "Iconic",
+      description: "The pinnacle of Vijayanagara architecture. Home to the legendary Stone Chariot and the musical pillars that produce melodic notes when tapped.",
+      timing: "8:30 AM - 5:30 PM",
+      fee: "Included in Hampi Heritage ticket",
+      image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
+      highlights: ["The Stone Chariot", "Musical Pillars", "Elaborate carvings of Maha Mantapa"]
+    },
+    {
+      id: "matanga",
+      title: "Matanga Hill",
+      category: "Adventure",
+      description: "The highest point in Hampi, offering unparalleled panoramic views of the entire heritage site. It's the most popular spot for sunrise and sunset.",
+      timing: "Open 24/7 (Recommended: Sunrise/Sunset)",
+      fee: "Free",
+      image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
+      highlights: ["360-degree panorama", "Veerabhadra Temple at summit", "Breathtaking sunset views"]
+    },
+    {
+      id: "lotus-mahal",
+      title: "Lotus Mahal & Elephant Stables",
+      category: "Royal",
+      description: "Part of the Zenana Enclosure, this two-storied pavilion is a unique blend of Indo-Islamic architecture, designed to resemble a lotus bud.",
+      timing: "8:30 AM - 5:30 PM",
+      fee: "Included in Hampi Heritage ticket",
+      image: "https://images.unsplash.com/photo-1600100397608-f010e423b971?auto=format&fit=crop&q=80&w=2000",
+      highlights: ["Indo-Islamic design", "Water cooling system", "Grand Elephant Stables nearby"]
+    }
+  ];
+  
+  const POINTS_OF_INTEREST = [
+    {
+      id: "vittala",
+      name: "Vittala Temple",
+      category: "Architecture",
+      x: 75,
+      y: 35,
+      description: "The architectural pinnacle of Hampi, famous for its musical pillars and the iconic stone chariot.",
+      image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
+      recommendedTours: ["Vittala Musical Pillars Deep-Dive", "Stone Chariot Photography"],
+      nearbyResort: "Evolve Back Kamlapura"
+    },
+    {
+      id: "virupaksha",
+      name: "Virupaksha Temple",
+      category: "Heritage",
+      x: 25,
+      y: 40,
+      description: "The oldest and most sacred temple in Hampi, dedicated to Lord Shiva, with a towering 50-meter gopuram.",
+      image: "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?auto=format&fit=crop&q=80&w=2000",
+      recommendedTours: ["Main Bazaar Walk", "Sacred Center Sunrise Tour"],
+      nearbyResort: "Hampi Heritage Resort"
+    },
+    {
+      id: "matanga",
+      name: "Matanga Hill",
+      category: "Nature",
+      x: 45,
+      y: 45,
+      description: "The highest point in Hampi offering a breathtaking 360-degree view of the entire landscape.",
+      image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
+      recommendedTours: ["Sunrise Trek", "Bouldering Adventure"],
+      nearbyResort: "Whispering Rocks"
+    },
+    {
+      id: "lotus",
+      name: "Lotus Mahal",
+      category: "Architecture",
+      x: 35,
+      y: 65,
+      description: "An elegant two-story pavilion showcasing a unique blend of Indo-Islamic architecture.",
+      image: "https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?auto=format&fit=crop&q=80&w=2000",
+      recommendedTours: ["Royal Enclosure Walk", "Women of Vijayanagara Tour"],
+      nearbyResort: "Heritage Resort Hampi"
+    },
+    {
+      id: "bazaar",
+      name: "Hampi Bazaar",
+      category: "Heritage",
+      x: 30,
+      y: 35,
+      description: "Once a bustling trade center for diamonds and spices, now a row of ancient stone pavilions.",
+      image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
+      recommendedTours: ["Forgotten Village Cycle Tour", "Bazaar Street Stories"],
+      nearbyResort: "The Hyatt Place"
+    }
+  ];
+  
+  app.get('/api/heritage/attractions', (req, res) => res.json(ATTRACTIONS));
+  app.get('/api/heritage/poi', (req, res) => res.json(POINTS_OF_INTEREST));
+  
+  app.get('/api/stats', async (req, res) => {
+    try {
+      const resortsCount = await prisma.resort.count();
+      const bookingsCount = await prisma.booking.count();
+      res.json({
+        resorts: `${resortsCount}+`,
+        guests: `${(bookingsCount * 2 + 1250).toLocaleString()}+`, // Base 1250 + real growth
+        experiences: "25+",
+        rating: "4.9"
+      });
+    } catch (error) {
+      res.json({ resorts: "50+", guests: "10k+", experiences: "25+", rating: "4.9" });
+    }
+  });
+
+  // ============================================================
+  // NOTIFICATION ROUTES
+  // ============================================================
 
 app.patch('/api/notifications/:id/read', async (req, res) => {
   try {

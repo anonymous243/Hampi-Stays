@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Compass, Landmark, ArrowRight, Sparkles, X } from "lucide-react";
+import { Compass, Landmark, ArrowRight, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
 
@@ -16,67 +16,28 @@ interface POI {
   nearbyResort: string;
 }
 
-const pointsOfInterest: POI[] = [
-  {
-    id: "vittala",
-    name: "Vittala Temple",
-    category: "Architecture",
-    x: 75,
-    y: 35,
-    description: "The architectural pinnacle of Hampi, famous for its musical pillars and the iconic stone chariot.",
-    image: "https://images.unsplash.com/photo-1642516863984-68fdeea5ba64?auto=format&fit=crop&q=80&w=2000",
-    recommendedTours: ["Vittala Musical Pillars Deep-Dive", "Stone Chariot Photography"],
-    nearbyResort: "Evolve Back Kamlapura"
-  },
-  {
-    id: "virupaksha",
-    name: "Virupaksha Temple",
-    category: "Heritage",
-    x: 25,
-    y: 40,
-    description: "The oldest and most sacred temple in Hampi, dedicated to Lord Shiva, with a towering 50-meter gopuram.",
-    image: "https://images.unsplash.com/photo-1581391528803-5eba57ac1f2d?auto=format&fit=crop&q=80&w=2000",
-    recommendedTours: ["Main Bazaar Walk", "Sacred Center Sunrise Tour"],
-    nearbyResort: "Hampi Heritage Resort"
-  },
-  {
-    id: "matanga",
-    name: "Matanga Hill",
-    category: "Nature",
-    x: 45,
-    y: 45,
-    description: "The highest point in Hampi offering a breathtaking 360-degree view of the entire landscape.",
-    image: "https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&q=80&w=2000",
-    recommendedTours: ["Sunrise Trek", "Bouldering Adventure"],
-    nearbyResort: "Whispering Rocks"
-  },
-  {
-    id: "lotus",
-    name: "Lotus Mahal",
-    category: "Architecture",
-    x: 35,
-    y: 65,
-    description: "An elegant two-story pavilion showcasing a unique blend of Indo-Islamic architecture.",
-    image: "https://images.unsplash.com/photo-1588319648913-0ff4b76a9fed?auto=format&fit=crop&q=80&w=2000",
-    recommendedTours: ["Royal Enclosure Walk", "Women of Vijayanagara Tour"],
-    nearbyResort: "Heritage Resort Hampi"
-  },
-  {
-    id: "bazaar",
-    name: "Hampi Bazaar",
-    category: "Heritage",
-    x: 30,
-    y: 35,
-    description: "Once a bustling trade center for diamonds and spices, now a row of ancient stone pavilions.",
-    image: "https://images.unsplash.com/photo-1596018382916-56d2e341d784?auto=format&fit=crop&q=80&w=2000",
-    recommendedTours: ["Forgotten Village Cycle Tour", "Bazaar Street Stories"],
-    nearbyResort: "The Hyatt Place"
-  }
-];
-
 export function DiscoveryPage() {
+  const [pointsOfInterest, setPointsOfInterest] = useState<POI[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPOI, setSelectedPOI] = useState<POI | null>(null);
   const [hoveredPOI, setHoveredPOI] = useState<POI | null>(null);
+
+  useEffect(() => {
+    const fetchPOI = async () => {
+      try {
+        const res = await fetch('/api/heritage/poi');
+        if (res.ok) {
+          const data = await res.json();
+          setPointsOfInterest(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch POIs", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPOI();
+  }, []);
 
   return (
     <div className="min-h-screen bg-navy-950 overflow-hidden relative">
@@ -122,6 +83,14 @@ export function DiscoveryPage() {
 
         {/* Map Container */}
         <div className="flex-1 relative bg-white/5 backdrop-blur-sm rounded-[4rem] border border-white/10 shadow-2xl overflow-hidden group">
+          {/* Loading State Overlay */}
+          {isLoading && (
+             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-navy-950/80 backdrop-blur-md">
+                <Loader2 className="w-16 h-16 animate-spin text-gold-500 mb-6" />
+                <p className="text-gold-400 font-bold uppercase tracking-[0.3em] text-sm animate-pulse">Initializing Heritage Grid...</p>
+             </div>
+          )}
+
           {/* Stylized Map Grid */}
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <div className="w-full h-full grid grid-cols-12 grid-rows-12">
