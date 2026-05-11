@@ -494,7 +494,15 @@ app.post('/api/bookings/:reference/verify-payment', async (req, res) => {
         .update(body.toString())
         .digest("hex");
 
+      console.log("--- Payment Verification ---");
+      console.log("Order ID:", razorpay_order_id);
+      console.log("Payment ID:", razorpay_payment_id);
+      console.log("Received Signature:", razorpay_signature);
+      console.log("Expected Signature:", expectedSignature);
+      console.log("Secret length:", (process.env.RAZORPAY_KEY_SECRET || "").length);
+
       if (expectedSignature !== razorpay_signature) {
+        console.error("❌ Signature Mismatch!");
         return res.status(400).json({ success: false, message: 'Invalid payment signature' });
       }
     }
