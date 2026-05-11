@@ -1664,36 +1664,34 @@ export function OwnerDashboard() {
                              <p className="text-sm text-navy-950/70 font-medium italic">
                                {booking.specialRequests || "No special requests mentioned by the guest for this stay."}
                              </p>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-4 border-t border-sand-100">
-                             <div>
-                               <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Status & Payment</p>
-                               <div className="flex items-center gap-3">
-                                 <span className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                                   booking.status === "CONFIRMED" ? "bg-green-50 text-green-700 border-green-100" :
-                                   booking.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-100" :
-                                   "bg-gold-50 text-gold-700 border-gold-100")}>
-                                   {booking.status}
-                                 </span>
-                                 <p className="text-lg font-serif font-bold text-navy-950">₹{booking.totalPrice?.toLocaleString("en-IN")}</p>
-                               </div>
-                             </div>
-                             
-                             <div className="flex gap-3">
-                                {booking.status === "PENDING" && (
-                                  <>
-                                    <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
-                                    <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
-                                  </>
-                                )}
-                                {booking.status === "CONFIRMED" && (
-                                  <div className="flex gap-3">
-                                    <Button variant="outline" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200">Generate Invoice</Button>
-                                    <Button variant="outline" onClick={() => handleDownloadConfirmation(booking)} className="rounded-xl border-gold-200 text-gold-700">Download Confirmation</Button>
-                                    <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkin')} className="rounded-xl px-8 bg-gold-600 hover:bg-gold-700 text-white shadow-lg">Check-In Guest</Button>
-                                  </div>
-                                )}
+                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-6 border-t border-sand-100">
+                              <div>
+                                <p className="text-[10px] font-bold text-navy-950/40 uppercase tracking-widest mb-1">Status & Payment</p>
+                                <div className="flex items-center gap-3">
+                                  <span className={cn("px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                    booking.status === "CONFIRMED" ? "bg-green-50 text-green-700 border-green-100" :
+                                    booking.status === "CANCELLED" ? "bg-red-50 text-red-700 border-red-100" :
+                                    "bg-gold-50 text-gold-700 border-gold-100")}>
+                                    {booking.status}
+                                  </span>
+                                  <p className="text-lg font-serif font-bold text-navy-950">₹{booking.totalPrice?.toLocaleString("en-IN")}</p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-wrap items-center gap-3">
+                                 {booking.status === "PENDING" && (
+                                   <div className="flex flex-wrap gap-3">
+                                     <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
+                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
+                                   </div>
+                                 )}
+                                 {booking.status === "CONFIRMED" && (
+                                   <div className="flex flex-wrap items-center gap-3">
+                                     <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200 text-xs px-4">Generate Invoice</Button>
+                                     <Button variant="outline" size="sm" onClick={() => handleDownloadConfirmation(booking)} className="rounded-xl border-gold-200 text-gold-700 text-xs px-4">Download Confirmation</Button>
+                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkin')} className="rounded-xl px-6 bg-gold-600 hover:bg-gold-700 text-white shadow-lg text-xs">Check-In Guest</Button>
+                                   </div>
+                                 )}
                                 {booking.status === "CHECKED_IN" && (
                                   <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkout')} className="rounded-xl px-8 bg-navy-950 hover:bg-navy-900 text-white shadow-lg">Process Check-Out</Button>
                                 )}
