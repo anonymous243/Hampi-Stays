@@ -7,9 +7,9 @@ import {
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { apiClient } from "../../utils/apiClient";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 import { useAuth } from "../../context/AuthContext";
 import type { Booking } from "../../types/booking";
 
@@ -30,7 +30,7 @@ export function CheckoutSuccessPage() {
       }
 
       try {
-        const data = await apiClient.get(`/bookings/reference/${orderId}`);
+        const data = await apiClient.get<Booking>(`/bookings/reference/${orderId}`);
         if (data) {
           setBooking(data);
           setStatus("success");

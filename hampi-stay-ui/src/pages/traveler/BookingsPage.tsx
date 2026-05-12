@@ -11,9 +11,9 @@ import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import type { Booking } from "../../types/booking";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import QRCode from "qrcode";
+import * as QRCode from "qrcode";
 
 
 export function BookingsPage() {
