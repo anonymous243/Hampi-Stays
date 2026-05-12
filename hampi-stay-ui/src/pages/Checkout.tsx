@@ -11,6 +11,7 @@ import { getResortById } from "../data/resorts";
 import { Button } from "../components/ui/Button";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { apiClient } from "../utils/apiClient";
+import { cn } from "../utils/cn";
 import { useAuth } from "../context/AuthContext";
 
 export function Checkout() {
