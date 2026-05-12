@@ -41,8 +41,9 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(sanitizeRequest);
 
 // 3. CORS Configuration
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null;
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  frontendUrl,
   'http://localhost:5173',
   'http://localhost:5000'
 ].filter(Boolean);
