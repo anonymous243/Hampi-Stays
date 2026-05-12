@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { API_BASE_URL } from "../config/api";
+import { apiClient } from "../utils/apiClient";
 
 type UserRole = "TRAVELLER" | "RESORT_OWNER" | "GUIDE" | "ADMIN";
 
@@ -45,32 +46,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem("hampi-token");
     
     if (savedUser && token) {
-      // Set local state immediately for fast load
       setUser(JSON.parse(savedUser));
       
-      // Verify with backend in background to ensure session is still valid
-      fetch(`${API_BASE_URL}/auth/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      .then(res => {
-        if (!res.ok) {
-          // Token expired or invalid
-          logout();
-        } else {
-          return res.json();
-        }
-      })
-      .then(data => {
-        if (data && data.user) {
-          setUser(data.user);
-          localStorage.setItem("hampi-user", JSON.stringify(data.user));
-        }
-      })
-      .catch(() => {
-        // Network error, keep local user for offline/temporary access
-        console.warn("Session verification failed. Operating in offline mode.");
-      })
-      .finally(() => setIsLoading(false));
+      apiClient.get<{ user: User }>('/auth/me')
+        .then(data => {
+          if (data && data.user) {
+            setUser(data.user);
+            localStorage.setItem("hampi-user", JSON.stringify(data.user));
+          }
+        })
+        .catch((err) => {
+          console.warn("Session verification failed:", err.message);
+          if (err.status === 401) logout();
+        })
+        .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
     }
@@ -82,94 +71,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Login failed');
-
-      setUser(data.user);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      localStorage.setItem("hampi-token", data.token);
-      _setShowAuthModal(false); // Close modal on success
-      return data;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    const data = await apiClient.post<any>('/auth/login', { email, password });
+    setUser(data.user);
+    localStorage.setItem("hampi-user", JSON.stringify(data.user));
+    localStorage.setItem("hampi-token", data.token);
+    _setShowAuthModal(false);
+    return data;
   };
 
   const loginWithGoogle = async (credential: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential }),
-      });
-      
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Google login failed');
-
-      setUser(data.user);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      localStorage.setItem("hampi-token", data.token);
-      _setShowAuthModal(false); // Close modal on success
-      return data;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    const data = await apiClient.post<any>('/auth/google', { credential });
+    setUser(data.user);
+    localStorage.setItem("hampi-user", JSON.stringify(data.user));
+    localStorage.setItem("hampi-token", data.token);
+    _setShowAuthModal(false);
+    return data;
   };
 
   const loginWithApple = async (appleResponse: any) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/apple`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id_token: appleResponse.authorization.id_token,
-          user: appleResponse.user
-        }),
-      });
-      
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Apple login failed');
-
-      setUser(data.user);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      localStorage.setItem("hampi-token", data.token);
-      _setShowAuthModal(false); // Close modal on success
-      return data;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    const data = await apiClient.post<any>('/auth/apple', {
+      id_token: appleResponse.authorization.id_token,
+      user: appleResponse.user
+    });
+    setUser(data.user);
+    localStorage.setItem("hampi-user", JSON.stringify(data.user));
+    localStorage.setItem("hampi-token", data.token);
+    _setShowAuthModal(false);
+    return data;
   };
 
   const register = async (name: string, email: string, phone: string, password: string, role: UserRole) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, role }),
-      });
-      
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Registration failed');
-
-      setUser(data.user);
-      localStorage.setItem("hampi-user", JSON.stringify(data.user));
-      localStorage.setItem("hampi-token", data.token);
-      _setShowAuthModal(false); // Close modal on success
-      return data;
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+    const data = await apiClient.post<any>('/auth/register', { name, email, phone, password, role });
+    setUser(data.user);
+    localStorage.setItem("hampi-user", JSON.stringify(data.user));
+    localStorage.setItem("hampi-token", data.token);
+    _setShowAuthModal(false);
+    return data;
   };
 
   const updateUser = (updatedUser: User) => {

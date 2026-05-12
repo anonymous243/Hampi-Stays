@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { apiClient } from "../../utils/apiClient";
 
 export function Statistics() {
   const [stats, setStats] = useState([
@@ -10,15 +11,16 @@ export function Statistics() {
   ]);
 
   useEffect(() => {
-    fetch('/api/stats')
-      .then(res => res.json())
+    apiClient.get<any>('/stats')
       .then(data => {
-        setStats([
-          { value: data.resorts, label: "Luxury Villas", key: "resorts" },
-          { value: data.guests, label: "Happy Guests", key: "guests" },
-          { value: data.experiences, label: "Curated Experiences", key: "experiences" },
-          { value: data.rating, label: "Average Rating", key: "rating" },
-        ]);
+        if (data) {
+          setStats([
+            { value: data.resorts, label: "Luxury Villas", key: "resorts" },
+            { value: data.guests, label: "Happy Guests", key: "guests" },
+            { value: data.experiences, label: "Curated Experiences", key: "experiences" },
+            { value: data.rating, label: "Average Rating", key: "rating" },
+          ]);
+        }
       })
       .catch(err => console.error("Stats fetch failed", err));
   }, []);

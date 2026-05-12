@@ -1,0 +1,76 @@
+import { API_BASE_URL } from '../config/api';
+
+interface RequestOptions extends RequestInit {
+  params?: Record<string, string>;
+}
+
+export class ApiError extends Error {
+  constructor(public message: string, public status?: number, public data?: any) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+/**
+ * Enhanced fetch wrapper for HampiStays
+ * Handles base URL, auth headers, and safe JSON parsing
+ */
+async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const { params, headers, ...rest } = options;
+  
+  // 1. Construct URL with params
+  let url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  if (params) {
+    const searchParams = new URLSearchParams(params);
+    url += `?${searchParams.toString()}`;
+  }
+
+  // 2. Add Auth Header
+  const token = localStorage.getItem('token');
+  const defaultHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` }),
+  };
+
+  // 3. Perform Fetch
+  const response = await fetch(url, {
+    ...rest,
+    headers: {
+      ...defaultHeaders,
+      ...headers,
+    },
+  });
+
+  // 4. Handle Empty or Non-JSON Responses safely
+  const contentType = response.headers.get('content-type');
+  let data: any = null;
+
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      data = await response.json();
+    } catch (err) {
+      // This is exactly where "Unexpected end of JSON input" happens
+      console.error('Failed to parse JSON response:', err);
+      throw new ApiError('The server returned an invalid response format.', response.status);
+    }
+  } else {
+    // If it's not JSON, we still might want to know if it's an error
+    const text = await response.text();
+    data = { message: text };
+  }
+
+  // 5. Handle HTTP Errors
+  if (!response.ok) {
+    throw new ApiError(data?.error || data?.message || 'An unexpected error occurred', response.status, data);
+  }
+
+  return data as T;
+}
+
+export const apiClient = {
+  get: <T>(url: string, options?: RequestOptions) => request<T>(url, { ...options, method: 'GET' }),
+  post: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'POST', body: JSON.stringify(body) }),
+  put: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  patch: <T>(url: string, body?: any, options?: RequestOptions) => request<T>(url, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
+  delete: <T>(url: string, options?: RequestOptions) => request<T>(url, { ...options, method: 'DELETE' }),
+};

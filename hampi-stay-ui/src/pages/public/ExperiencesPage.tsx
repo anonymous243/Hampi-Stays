@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiClient } from "../../utils/apiClient";
 import { motion } from "framer-motion";
 import { 
   Search, MapPin, Star, ArrowRight, 
@@ -47,15 +48,8 @@ export function ExperiencesPage() {
   useEffect(() => {
     const fetchExperiences = async () => {
       try {
-        const res = await fetch('/api/experiences');
-        if (!res.ok) throw new Error('API request failed');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setExperiences(data);
-        } else {
-          console.warn("API did not return an array:", data);
-          setExperiences([]);
-        }
+        const data = await apiClient.get<Experience[]>('/experiences');
+        setExperiences(data || []);
       } catch (err) {
         console.error("Failed to fetch experiences", err);
         setExperiences([]);
