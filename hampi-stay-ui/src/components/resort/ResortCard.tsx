@@ -10,6 +10,7 @@ import { cn } from "../../utils/cn";
 import type { Resort } from "../../types/resort";
 import { useAuth } from "../../context/AuthContext";
 import { useEffect } from "react";
+import { apiClient } from "../../utils/apiClient";
 
 interface ResortCardProps {
   resort: Resort;
@@ -50,13 +51,10 @@ export function ResortCard({
     const checkWishlist = async () => {
       if (!user) return;
       try {
-        const res = await fetch(`/api/users/${user.id}/wishlist`);
-        if (res.ok) {
-          const list = await res.json();
-          setIsFav(list.some((r: any) => r.id === resort.id));
-        }
+        const list = await apiClient.get<any[]>(`/users/${user.id}/wishlist`);
+        setIsFav(list.some((r: any) => r.id === resort.id));
       } catch (err) {
-        console.error(err);
+        console.error("Wishlist check failed:", err);
       }
     };
     checkWishlist();
@@ -71,19 +69,15 @@ export function ResortCard({
     }
 
     try {
-      const response = await fetch(`/api/wishlist/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, resortId: resort.id })
+      const data = await apiClient.post<any>(`/wishlist/toggle`, { 
+        userId: user.id, 
+        resortId: resort.id 
       });
-      if (response.ok) {
-        const data = await response.json();
-        setIsFav(data.saved);
-        // Dispatch custom event for real-time sync across components
-        window.dispatchEvent(new CustomEvent('wishlist-updated'));
-      }
+      setIsFav(data.saved);
+      // Dispatch custom event for real-time sync across components
+      window.dispatchEvent(new CustomEvent('wishlist-updated'));
     } catch (err) {
-      console.error(err);
+      console.error("Wishlist toggle failed:", err);
     }
   };
 

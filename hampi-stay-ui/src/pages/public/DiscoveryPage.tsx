@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiClient } from "../../utils/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { Compass, Landmark, ArrowRight, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
@@ -34,11 +35,8 @@ export function DiscoveryPage() {
   useEffect(() => {
     const fetchPOI = async () => {
       try {
-        const res = await fetch('/api/heritage/poi');
-        if (res.ok) {
-          const data = await res.json();
-          setPointsOfInterest(data);
-        }
+        const data = await apiClient.get<POI[]>('/heritage/poi');
+        if (data) setPointsOfInterest(data);
       } catch (err) {
         console.error("Failed to fetch POIs", err);
       } finally {

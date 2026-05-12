@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import type { Resort, FilterState, SortOption, SearchParams } from "../types/resort";
+import { apiClient } from "../utils/apiClient";
 
 interface UseResortsOptions {
   search?: Partial<SearchParams>;
@@ -26,9 +27,7 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
     const fetchResorts = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/resorts');
-        if (!response.ok) throw new Error('Failed to fetch resorts');
-        const data = await response.json();
+        const data = await apiClient.get<any[]>('/resorts');
         
         // Map backend data to frontend types (Normalization)
         const normalized = data.map((r: any) => ({
