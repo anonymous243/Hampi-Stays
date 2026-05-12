@@ -150,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem("hampi-user");
     localStorage.removeItem("hampi-token");
+    window.location.href = "/";
   };
 
   return (
