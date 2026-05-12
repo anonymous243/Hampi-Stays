@@ -346,7 +346,9 @@ enum Role {
 
 enum BookingStatus {
   PENDING
+  PAID
   CONFIRMED
+  CHECKED_IN
   CANCELLED
   COMPLETED
 }
