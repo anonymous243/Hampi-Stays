@@ -27,11 +27,8 @@ export function BookingsPage() {
   const fetchBookings = useCallback(async () => {
     if (!user) return;
     try {
-      const response = await fetch(`/api/users/${user.id}/bookings`);
-      if (response.ok) {
-        const data = await response.json();
-        setBookings(data);
-      }
+      const data = await apiClient.get<Booking[]>(`/users/${user.id}/bookings`);
+      setBookings(data);
     } catch (err) {
       console.error("Failed to fetch bookings:", err);
     } finally {
@@ -61,18 +58,10 @@ export function BookingsPage() {
     if (!confirm("Are you sure you want to cancel this booking? This cannot be undone.")) return;
     setCancellingId(bookingId);
     try {
-      const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (response.ok) {
-        alert("Booking cancelled successfully.");
-        await fetchBookings();
-        setActiveTab("cancelled");
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to cancel booking");
-      }
+      await apiClient.patch(`/bookings/${bookingId}/cancel`);
+      alert("Booking cancelled successfully.");
+      await fetchBookings();
+      setActiveTab("cancelled");
     } catch (err: any) {
       console.error(err);
       alert(`Error: ${err.message || "Failed to cancel booking. Please try again."}`);
@@ -83,21 +72,14 @@ export function BookingsPage() {
 
   const handleReview = async (resortId: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          resortId,
-          rating: reviewData.rating,
-          comment: reviewData.comment
-        }),
+      await apiClient.post('/reviews', {
+        userId: user?.id,
+        resortId,
+        rating: reviewData.rating,
+        comment: reviewData.comment
       });
-      if (response.ok) {
-        setShowReview(null);
-        setReviewData({ rating: 5, comment: "" });
-        // In a real app, we'd update the booking record to show it's reviewed
-      }
+      setShowReview(null);
+      setReviewData({ rating: 5, comment: "" });
     } catch (err) {
       console.error(err);
     }

@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, Loader2, Calendar, MapPin, ArrowRight } from "lucide-react";
-import { Button } from "../../components/ui/Button";
+import { apiClient } from "../../utils/apiClient";
+import { Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
+import { useAuth } from "../../context/AuthContext";
 
 export function CheckoutSuccessPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const orderId = searchParams.get("order_id");
   const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
   const [booking, setBooking] = useState<any>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
@@ -19,11 +22,8 @@ export function CheckoutSuccessPage() {
       }
 
       try {
-        // We just need to fetch the details since verification happened on the previous page
-        const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bookings/reference/${orderId}`);
-        const data = await response.json();
-
-        if (response.ok && data) {
+        const data = await apiClient.get(`/bookings/reference/${orderId}`);
+        if (data) {
           setBooking(data);
           setStatus("success");
         } else {
@@ -37,6 +37,172 @@ export function CheckoutSuccessPage() {
 
     fetchBookingDetails();
   }, [orderId]);
+
+  const handleDownloadConfirmation = async () => {
+    if (!booking) return;
+    setIsDownloading(true);
+    try {
+      const doc = new jsPDF();
+      const safeRef = booking.referenceNumber || orderId;
+      const issueDate = new Date().toLocaleDateString("en-GB");
+      
+      const navy: [number, number, number] = [10, 15, 30];
+      const gold: [number, number, number] = [184, 134, 11];
+      const sand: [number, number, number] = [245, 245, 240];
+      
+      doc.setFillColor(navy[0], navy[1], navy[2]);
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("times", "bold");
+      doc.setFontSize(28);
+      doc.text("HAMPISTAYS", 15, 22);
+      
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(180, 180, 180);
+      doc.text("LUXURY ECO-HOSPITALITY | HAMPI, INDIA", 15, 28);
+
+      doc.setTextColor(gold[0], gold[1], gold[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("OFFICIAL CONFIRMATION", 195, 18, { align: 'right' });
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(`Ref: ${safeRef}`, 195, 24, { align: 'right' });
+      doc.text(`Date: ${issueDate}`, 195, 29, { align: 'right' });
+
+      doc.setDrawColor(gold[0], gold[1], gold[2]);
+      doc.setLineWidth(0.5);
+      doc.line(15, 50, 195, 50);
+
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.setFont("times", "bolditalic");
+      doc.setFontSize(18);
+      doc.text("Your Royal Retreat is Confirmed", 105, 62, { align: 'center' });
+
+      let currentY = 75;
+      doc.setFillColor(sand[0], sand[1], sand[2]);
+      doc.rect(15, currentY, 85, 35, 'F');
+      
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(gold[0], gold[1], gold[2]);
+      doc.text("GUEST & BOOKING", 20, currentY + 8);
+      
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(user?.name || 'Guest', 20, currentY + 16);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(`Status: ${booking.status.toUpperCase()}`, 20, currentY + 22);
+      doc.text(`Reference: ${safeRef}`, 20, currentY + 28);
+
+      doc.setFillColor(sand[0], sand[1], sand[2]);
+      doc.rect(110, currentY, 85, 35, 'F');
+      
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(gold[0], gold[1], gold[2]);
+      doc.text("ACCOMMODATION", 115, currentY + 8);
+      
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(booking.resort?.name || 'HampiStays Resort', 115, currentY + 16);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const nights = Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24));
+      doc.text(booking.room?.name || 'Standard Room', 115, currentY + 22);
+      doc.text(`${nights} Night(s) Stay`, 115, currentY + 28);
+
+      currentY += 45;
+      autoTable(doc, {
+        startY: currentY,
+        head: [['CHECK-IN', 'CHECK-OUT', 'GUESTS', 'TOTAL PAID']],
+        body: [[
+          `${new Date(booking.checkIn).toLocaleDateString("en-GB")}\n14:00 PM`,
+          `${new Date(booking.checkOut).toLocaleDateString("en-GB")}\n11:00 AM`,
+          `${booking.guests} Adult(s)`,
+          `INR ${booking.totalPrice?.toLocaleString("en-IN")}`
+        ]],
+        theme: 'plain',
+        styles: { fontSize: 10, cellPadding: 6, halign: 'center' },
+        headStyles: { 
+          fillColor: [240, 240, 240], 
+          textColor: navy, 
+          fontStyle: 'bold', 
+          fontSize: 8,
+          lineWidth: 0.1,
+          lineColor: [200, 200, 200]
+        },
+        bodyStyles: { textColor: navy, fontStyle: 'bold', fontSize: 11 },
+        margin: { left: 15, right: 15 },
+      });
+
+      currentY = (doc as any).lastAutoTable.finalY + 15;
+      doc.setDrawColor(230, 230, 230);
+      doc.rect(15, currentY, 180, 55);
+
+      doc.setFont("times", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.text("Essential Information", 22, currentY + 10);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(80, 80, 80);
+      const infoPoints = [
+        "• Present a valid Govt ID (Aadhar/Passport) at check-in.",
+        "• Cancellation: Free up to 48 hours prior to arrival.",
+        "• HampiStays is a plastic-free sanctuary.",
+        "• Standard Check-in 2 PM | Check-out 11 AM."
+      ];
+      infoPoints.forEach((point, i) => {
+        doc.text(point, 22, currentY + 18 + (i * 6));
+      });
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(gold[0], gold[1], gold[2]);
+      doc.text("SCAN TO VERIFY", 165, currentY + 10, { align: 'center' });
+      
+      const qrUrl = `${window.location.origin}/dashboard/bookings`;
+      const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, { 
+        margin: 1, 
+        width: 200, 
+        color: { dark: '#0A0F1E', light: '#FFFFFF' },
+        errorCorrectionLevel: 'H'
+      });
+      doc.addImage(qrCodeDataUrl, 'PNG', 150, currentY + 13, 30, 30);
+
+      const footerY = 270;
+      doc.setDrawColor(gold[0], gold[1], gold[2]);
+      doc.setLineWidth(0.1);
+      doc.line(40, footerY, 170, footerY);
+
+      doc.setTextColor(navy[0], navy[1], navy[2]);
+      doc.setFont("times", "italic");
+      doc.setFontSize(10);
+      doc.text("We look forward to welcoming you to the heart of Hampi's heritage.", 105, footerY + 8, { align: 'center' });
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text("Main Road, Hampi, Karnataka 583239 | +91 99000 88000 | help@hampistays.com", 105, footerY + 14, { align: 'center' });
+
+      doc.save(`HampiStays_Confirmation_${safeRef}.pdf`);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      alert("Failed to generate PDF. Please download from your dashboard.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -139,6 +305,12 @@ export function CheckoutSuccessPage() {
                     Manage My Bookings
                     <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
+                  
+                  <Button variant="outline" className="w-full rounded-2xl h-14 border-gold-200 text-gold-700 gap-2" onClick={handleDownloadConfirmation} isLoading={isDownloading}>
+                    <Download className="w-4 h-4" />
+                    Download Invoice PDF
+                  </Button>
+
                   <p className="text-[10px] text-navy-950/30 italic text-center leading-relaxed">
                     A confirmation email with the itinerary has been sent to your registered address.
                   </p>
