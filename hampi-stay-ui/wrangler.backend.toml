@@ -1,0 +1,12 @@
+# Cloudflare Worker for HampiStays Backend
+name = "hampistays-api"
+main = "server/worker.js"
+compatibility_date = "2026-05-13"
+
+[vars]
+# DATABASE_URL should be a Prisma Accelerate URL for Cloudflare Workers
+NODE_ENV = "production"
+
+# If using Prisma Accelerate
+[dev]
+port = 5000
