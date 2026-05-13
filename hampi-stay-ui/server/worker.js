@@ -61,6 +61,17 @@ app.get('/stats', async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
+app.get('/settings', async (c) => {
+  const prisma = getPrisma(c.env);
+  try {
+    let settings = await prisma.systemSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.systemSettings.create({ data: { guideServiceEnabled: true } });
+    }
+    return c.json(settings);
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
 // Authentication
 app.post('/auth/register', async (c) => {
   const prisma = getPrisma(c.env);
@@ -138,6 +149,25 @@ app.get('/admin/stats', authMiddleware, adminMiddleware, async (c) => {
       platformRating: 4.9,
       avgBookingValue: bookingCount > 0 ? totalRevenue / bookingCount : 0
     });
+  } catch (err) { return c.json({ error: err.message }, 500); }
+});
+
+app.post('/admin/settings', authMiddleware, adminMiddleware, async (c) => {
+  const prisma = getPrisma(c.env);
+  const { guideServiceEnabled } = await c.req.json();
+  try {
+    let settings = await prisma.systemSettings.findFirst();
+    if (settings) {
+      settings = await prisma.systemSettings.update({
+        where: { id: settings.id },
+        data: { guideServiceEnabled }
+      });
+    } else {
+      settings = await prisma.systemSettings.create({
+        data: { guideServiceEnabled }
+      });
+    }
+    return c.json(settings);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
