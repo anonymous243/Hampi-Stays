@@ -5,10 +5,11 @@ import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
+import { useWishlist } from "../../context/WishlistContext";
 
 export function FeaturedResorts() {
+  const { isFavorite, toggleWishlist } = useWishlist();
   const [resorts, setResorts] = useState<any[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
@@ -30,11 +31,10 @@ export function FeaturedResorts() {
     fetchFeatured();
   }, []);
 
-  const toggleFavorite = (e: React.MouseEvent, id: string) => {
+  const handleToggleFavorite = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
     e.stopPropagation();
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((fId) => fId !== id) : [...prev, id]
-    );
+    await toggleWishlist(id);
   };
 
   if (isLoading) return (
@@ -103,7 +103,7 @@ export function FeaturedResorts() {
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
           {resorts.map((resort, index) => {
-            const isFav = favorites.includes(resort.id);
+            const isFav = isFavorite(resort.id);
             return (
               <motion.div
                 key={resort.id}
@@ -135,7 +135,7 @@ export function FeaturedResorts() {
                     Signature
                   </span>
                   <button
-                    onClick={(e) => toggleFavorite(e, resort.id)}
+                    onClick={(e) => handleToggleFavorite(e, resort.id)}
                     className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-colors shadow-sm group/btn"
                     aria-label="Toggle favourite"
                   >

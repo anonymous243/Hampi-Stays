@@ -17,6 +17,7 @@ import { ResortMap } from "../../components/resort/ResortMap";
 import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
+import { useWishlist } from "../../context/WishlistContext";
 import type { Resort } from "../../types/resort";
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
@@ -28,6 +29,7 @@ const AMENITY_ICON: Record<string, React.ReactNode> = {
 };
 
 export function ResortDetailPage() {
+  const { isFavorite, toggleWishlist } = useWishlist();
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const [galleryIdx, setGalleryIdx] = useState(0);
@@ -179,8 +181,14 @@ export function ResortDetailPage() {
                   >
                     <Share2 className="w-4 h-4" /> Share
                   </button>
-                  <button className="p-3 rounded-2xl bg-white border border-sand-200 text-navy-950 hover:text-red-500 transition-all shadow-sm active:scale-95">
-                    <Heart className="w-5 h-5" />
+                  <button 
+                    onClick={() => toggleWishlist(resort.id)}
+                    className={cn(
+                      "p-3 rounded-2xl bg-white border border-sand-200 transition-all shadow-sm active:scale-95",
+                      isFavorite(resort.id) ? "text-red-500 border-red-100 bg-red-50" : "text-navy-950 hover:text-red-500"
+                    )}
+                  >
+                    <Heart className={cn("w-5 h-5", isFavorite(resort.id) && "fill-current")} />
                   </button>
                 </div>
               </div>

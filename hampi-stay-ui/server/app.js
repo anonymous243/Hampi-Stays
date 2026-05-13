@@ -22,6 +22,7 @@ import guideRoutes from './routes/guideRoutes.js';
 
 
 import uploadRoutes from './routes/uploadRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
 
 
 
@@ -79,6 +80,7 @@ app.use('/api/guides', guideRoutes);
 
 
 app.use('/api/upload', uploadRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 
 

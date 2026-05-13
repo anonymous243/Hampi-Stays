@@ -9,6 +9,7 @@ import { Star, MapPin, Heart, Check } from "lucide-react";
 import { cn } from "../../utils/cn";
 import type { Resort } from "../../types/resort";
 import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
 import { useEffect } from "react";
 import { apiClient } from "../../utils/apiClient";
 
@@ -44,41 +45,15 @@ export function ResortCard({
   compareDisabled = false,
 }: ResortCardProps) {
   const { user } = useAuth();
-  const [isFav, setIsFav] = useState(false);
+  const { isFavorite, toggleWishlist } = useWishlist();
   const [imgError, setImgError] = useState(false);
 
-  useEffect(() => {
-    const checkWishlist = async () => {
-      if (!user) return;
-      try {
-        const list = await apiClient.get<any[]>(`/users/${user.id}/wishlist`);
-        setIsFav(list.some((r: any) => r.id === resort.id));
-      } catch (err) {
-        console.error("Wishlist check failed:", err);
-      }
-    };
-    checkWishlist();
-  }, [user, resort.id]);
+  const isFav = isFavorite(resort.id);
 
   const handleToggleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) {
-      alert("Please login to save resorts to your wishlist.");
-      return;
-    }
-
-    try {
-      const data = await apiClient.post<any>(`/wishlist/toggle`, { 
-        userId: user.id, 
-        resortId: resort.id 
-      });
-      setIsFav(data.saved);
-      // Dispatch custom event for real-time sync across components
-      window.dispatchEvent(new CustomEvent('wishlist-updated'));
-    } catch (err) {
-      console.error("Wishlist toggle failed:", err);
-    }
+    await toggleWishlist(resort.id);
   };
 
   // ── 3D TILT LOGIC ──

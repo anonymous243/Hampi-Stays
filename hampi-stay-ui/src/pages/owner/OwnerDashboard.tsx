@@ -42,6 +42,7 @@ export function OwnerDashboard() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("RECEPTIONIST");
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [housekeeping, setHousekeeping] = useState([
     { id: '1', room: '101', type: 'Heritage Suite', status: 'DIRTY', color: 'bg-red-500', lastCleaned: '2h ago', staff: 'Unassigned' },
     { id: '2', room: '104', type: 'Riverside Cottage', status: 'CLEANING', color: 'bg-blue-500', lastCleaned: '45m ago', staff: 'Priya D.' },
@@ -428,8 +429,8 @@ export function OwnerDashboard() {
   const fetchStaffData = async () => {
     if (!resorts.length) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/staff/invitations/${resorts[0].id}`);
-      if (res.ok) setPendingInvitations(await res.json());
+      const data = await apiClient.get<any[]>(`/admin/staff/invitations/${resorts[0].id}`);
+      setPendingInvitations(data);
     } catch (error) {
       console.error("Failed to fetch staff data:", error);
     }
@@ -472,6 +473,7 @@ export function OwnerDashboard() {
   };
 
   const handleBookingAction = async (bookingId: string, action: 'confirm' | 'reject' | 'checkin' | 'checkout') => {
+    setActionLoadingId(bookingId);
     try {
       const endpoint = action === 'confirm' || action === 'reject' 
         ? `/bookings/${bookingId}/${action}`
@@ -491,10 +493,12 @@ export function OwnerDashboard() {
           console.error("Failed to trigger welcome greeting:", err);
         }
       }
-      fetchResorts();
+      await fetchResorts();
     } catch (error) {
-      console.error("Network error:", error);
-      alert("Failed to update booking status.");
+      console.error("Booking action failed:", error);
+      alert(error instanceof Error ? error.message : "Failed to update booking status.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -520,8 +524,8 @@ export function OwnerDashboard() {
     if (activeTab === 'inbox' && activeMessageBooking) {
       const fetchMessages = async () => {
         try {
-          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/messages/${activeMessageBooking.id}`);
-          if (res.ok) setMessages(await res.json());
+          const data = await apiClient.get<any[]>(`/messages/${activeMessageBooking.id}`);
+          setMessages(data);
         } catch (err) {
           console.error("Poll failed", err);
         }
@@ -996,8 +1000,23 @@ export function OwnerDashboard() {
                           </span>
                           {booking.status === "PENDING" && (
                             <div className="flex gap-2 mt-2">
-                              <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="bg-green-600 hover:bg-green-700">Accept</Button>
-                              <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="border-red-200 text-red-600 hover:bg-red-50">Reject</Button>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleBookingAction(booking.id, 'confirm')} 
+                                isLoading={actionLoadingId === booking.id}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Accept
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleBookingAction(booking.id, 'reject')} 
+                                isLoading={actionLoadingId === booking.id}
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                              >
+                                Reject
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -1624,19 +1643,26 @@ export function OwnerDashboard() {
                               <div className="flex flex-wrap items-center gap-3">
                                  {booking.status === "PENDING" && (
                                    <div className="flex flex-wrap gap-3">
-                                     <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
-                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
+                                     <Button size="sm" variant="outline" onClick={() => handleBookingAction(booking.id, 'reject')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-6 border-red-100 text-red-600 hover:bg-red-50">Decline</Button>
+                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'confirm')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 shadow-lg shadow-green-600/20">Accept Request</Button>
                                    </div>
                                  )}
                                  {booking.status === "CONFIRMED" && (
                                    <div className="flex flex-wrap items-center gap-3">
                                      <Button variant="outline" size="sm" onClick={() => handleDownloadInvoice(booking)} className="rounded-xl border-sand-200 text-xs px-4">Generate Invoice</Button>
                                      <Button variant="outline" size="sm" onClick={() => handleDownloadConfirmation(booking)} className="rounded-xl border-gold-200 text-gold-700 text-xs px-4">Download Confirmation</Button>
-                                     <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkin')} className="rounded-xl px-6 bg-gold-600 hover:bg-gold-700 text-white shadow-lg text-xs">Check-In Guest</Button>
+                                     <Button 
+                                       size="sm" 
+                                       onClick={() => handleBookingAction(booking.id, 'checkin')} 
+                                       isLoading={actionLoadingId === booking.id}
+                                       className="rounded-xl px-6 bg-gold-600 hover:bg-gold-700 text-white shadow-lg text-xs"
+                                     >
+                                       Check-In Guest
+                                     </Button>
                                    </div>
                                  )}
                                 {booking.status === "CHECKED_IN" && (
-                                  <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkout')} className="rounded-xl px-8 bg-navy-950 hover:bg-navy-900 text-white shadow-lg">Process Check-Out</Button>
+                                  <Button size="sm" onClick={() => handleBookingAction(booking.id, 'checkout')} isLoading={actionLoadingId === booking.id} className="rounded-xl px-8 bg-navy-950 hover:bg-navy-900 text-white shadow-lg">Process Check-Out</Button>
                                 )}
                                 {booking.status === "COMPLETED" && (
                                   <span className="text-xs font-bold text-emerald-600 flex items-center gap-2">

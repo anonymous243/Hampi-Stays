@@ -3,54 +3,15 @@ import { motion } from "framer-motion";
 import { Heart, MapPin, Star, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
 import { Button } from "../../components/ui/Button";
 import type { Resort } from "../../types/resort";
 
 
 export function WishlistPage() {
-  const { user } = useAuth();
-  const [wishlist, setWishlist] = useState<Resort[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { wishlist, isLoading, toggleWishlist } = useWishlist();
 
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      if (!user) return;
-      try {
-        const response = await fetch(`/api/users/${user.id}/wishlist`);
-        if (response.ok) {
-          const data = await response.json();
-          setWishlist(data);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchWishlist();
-    
-    // Real-time sync listener
-    const handleWishlistUpdate = () => fetchWishlist();
-    window.addEventListener('wishlist-updated', handleWishlistUpdate);
-    return () => window.removeEventListener('wishlist-updated', handleWishlistUpdate);
-  }, [user]);
-
-  const toggleWishlist = async (resortId: string) => {
-    try {
-      const response = await fetch(`/api/wishlist/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id, resortId })
-      });
-      if (response.ok) {
-        setWishlist(prev => prev.filter(r => r.id !== resortId));
-        // Dispatch for global sync
-        window.dispatchEvent(new CustomEvent('wishlist-updated'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // No need for local state or useEffect for fetching anymore as context handles it
 
   return (
     <div className="min-h-screen bg-sand-50/50 pt-28 pb-12">
