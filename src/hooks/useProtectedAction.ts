@@ -19,19 +19,9 @@ export function useProtectedAction() {
     if (isAuthenticated) {
       action();
     } else {
-      // Luxury detection: Mobile gets full page, Desktop gets elegant modal
-      const isMobile = window.innerWidth < 768;
-      
-      if (isMobile) {
-        const redirectUrl = encodeURIComponent(window.location.pathname);
-        const messageQuery = options.message ? `&message=${encodeURIComponent(options.message)}` : '';
-        navigate(`/register?redirect=${redirectUrl}${messageQuery}`);
-      } else {
-        setShowAuthModal(true, { 
-          message: options.message || "Premium Access Required", 
-          view: options.view || "register" 
-        });
-      }
+      const redirectUrl = encodeURIComponent(window.location.pathname);
+      const messageQuery = options.message ? `&message=${encodeURIComponent(options.message)}` : '';
+      navigate(`/register?redirect=${redirectUrl}${messageQuery}`);
     }
   };
 

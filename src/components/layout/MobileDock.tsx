@@ -18,9 +18,8 @@ export function MobileDock() {
   const items = [
     { icon: Home, label: "Home", path: "/" },
     { icon: Search, label: "Explore", path: "/resorts" },
-    { icon: Compass, label: "Experiences", path: "/experiences" },
     { icon: Calendar, label: "Bookings", path: "/dashboard/bookings" },
-    { icon: User, label: "Profile", path: isAuthenticated ? "/dashboard/profile" : "/login" },
+    { icon: User, label: "Profile", path: isAuthenticated ? "/dashboard/profile" : "/register" },
   ];
 
   return (
@@ -37,7 +36,7 @@ export function MobileDock() {
           const handleClick = (e: React.MouseEvent, label: string) => {
             if (!isAuthenticated && (label === "Bookings" || label === "Profile")) {
               e.preventDefault();
-              navigate("/login");
+              navigate("/register");
             }
           };
 

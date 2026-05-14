@@ -12,13 +12,10 @@ const ResortsPage = lazy(() => import("./pages/public/ResortsPage").then(m => ({
 const ResortDetailPage = lazy(() => import("./pages/public/ResortDetailPage").then(m => ({ default: m.ResortDetailPage })));
 const ResortComparePage = lazy(() => import("./pages/public/ResortComparePage").then(m => ({ default: m.ResortComparePage })));
 const GalleryPage = lazy(() => import("./pages/public/GalleryPage").then(m => ({ default: m.GalleryPage })));
-const ExperiencesPage = lazy(() => import("./pages/public/ExperiencesPage").then(m => ({ default: m.ExperiencesPage })));
 const OurStoryPage = lazy(() => import("./pages/public/OurStoryPage").then(m => ({ default: m.OurStoryPage })));
 const ContactPage = lazy(() => import("./pages/public/ContactPage").then(m => ({ default: m.ContactPage })));
 const TermsOfServicePage = lazy(() => import("./pages/public/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
 const PrivacyPolicyPage = lazy(() => import("./pages/public/PrivacyPolicyPage").then(m => ({ default: m.PrivacyPolicyPage })));
-const LocalExpertsPage = lazy(() => import("./pages/public/LocalExpertsPage").then(m => ({ default: m.LocalExpertsPage })));
-const DiscoveryPage = lazy(() => import("./pages/public/DiscoveryPage").then(m => ({ default: m.DiscoveryPage })));
 const CookiesPage = lazy(() => import("./pages/public/CookiesPage").then(m => ({ default: m.CookiesPage })));
 const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
 
@@ -37,7 +34,6 @@ const ProfilePage = lazy(() => import("./pages/traveler/ProfilePage").then(m => 
 const NotificationsPage = lazy(() => import("./pages/traveler/NotificationsPage").then(m => ({ default: m.NotificationsPage })));
 const DashboardSelector = lazy(() => import("./components/shared/DashboardSelector").then(m => ({ default: m.DashboardSelector })));
 const ResortSetupPage = lazy(() => import("./pages/owner/ResortSetupPage").then(m => ({ default: m.ResortSetupPage })));
-const InventoryPage = lazy(() => import("./pages/owner/InventoryPage").then(m => ({ default: m.InventoryPage })));
 
 import { ScrollToTop } from "./components/shared/ScrollToTop";
 import { AuthModal } from "./components/auth/AuthModal";
@@ -93,19 +89,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/login?message=Premium Access Required" replace />;
-};
-
-// Guide Service Route Wrapper
-const GuideRoute = ({ children }: { children: React.ReactNode }) => {
-  const { settings, isLoading } = useSystem();
-  
-  if (isLoading) return null;
-  
-  if (settings && !settings.guideServiceEnabled) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
 };
 
 // Layout with Navbar and Footer
@@ -205,19 +188,8 @@ function AnimatedRoutes() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/dashboard/inventory"
-                element={
-                  <ProtectedRoute>
-                    <InventoryPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/experiences" element={<GuideRoute><ExperiencesPage /></GuideRoute>} />
               <Route path="/about" element={<OurStoryPage />} />
               <Route path="/gallery" element={<GalleryPage />} />
-              <Route path="/guide" element={<GuideRoute><LocalExpertsPage /></GuideRoute>} />
-              <Route path="/discovery" element={<GuideRoute><DiscoveryPage /></GuideRoute>} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />

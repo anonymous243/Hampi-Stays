@@ -57,7 +57,10 @@ export const ResortCard = memo(function ResortCard({
     e.preventDefault();
     e.stopPropagation();
     
-    toggleWishlist(resort.id);
+    protect(
+      () => toggleWishlist(resort.id),
+      { message: "Save to your collection", view: "register" }
+    );
   };
 
   // ── 3D TILT LOGIC ──

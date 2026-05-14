@@ -71,11 +71,6 @@ export function Navbar() {
           ]
     : [
     { name: "Resorts", path: "/resorts" },
-    ...(guideServiceEnabled ? [
-      { name: "Experiences", path: "/experiences" },
-      { name: "Experts", path: "/guide" },
-      { name: "Discover", path: "/discovery" }
-    ] : []),
     { name: "About", path: "/about" },
   ];
 

@@ -93,10 +93,6 @@ export function LuxuryFooter() {
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Resorts
               </Link></li>
-              <li><Link to="/experiences" className="text-navy-950 font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
-                <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
-                Experiences
-              </Link></li>
               <li><Link to="/gallery" className="text-navy-950 font-bold text-base hover:text-gold-600 transition-all flex items-center gap-2 group">
                 <span className="w-0 h-px bg-gold-500 group-hover:w-4 transition-all" />
                 Gallery
