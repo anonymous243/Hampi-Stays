@@ -1,3 +1,4 @@
+// Build Fix Version: 1.0.1 - Clearing possible stale cache
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
