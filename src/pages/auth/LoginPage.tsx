@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
 import { GoogleAuthButton } from "../../components/auth/GoogleAuthButton";
 import { AppleAuthButton } from "../../components/auth/AppleAuthButton";
+import { CinematicLogo } from "../../components/ui/CinematicLogo";
 
 // GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
@@ -184,8 +185,8 @@ export function LoginPage() {
             </Link>
 
             <motion.div variants={itemVariant} className="flex flex-col items-center mb-4 mt-2">
-              <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300 mb-6">
-                <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
+              <Link to="/" className="inline-block mb-6">
+                <CinematicLogo size="md" />
               </Link>
               
               {premiumMessage && (
