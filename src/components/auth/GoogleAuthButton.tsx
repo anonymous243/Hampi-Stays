@@ -101,10 +101,10 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Slide to Contin
         isSuccess ? "border-gold-500 shadow-gold" : "hover:border-sand-300 shadow-luxury"
       )}>
         
-        {/* 3. Luxury Track Fill */}
+        {/* 3. Soft Google Tones Luxury Fill */}
         <motion.div 
           style={{ width: trackFillWidth }}
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-gold-500/10 via-gold-500/20 to-gold-500/40 z-0"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500/10 via-gold-500/20 to-red-500/10 z-0"
         />
 
         {/* 4. Sliding Text */}
