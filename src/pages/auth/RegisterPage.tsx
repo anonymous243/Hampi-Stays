@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
 import { useAuth } from "../../context/AuthContext";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleAuthButton } from "../../components/auth/GoogleAuthButton";
 import { toast } from "react-hot-toast";
 import { useSystem } from "../../context/SystemContext";
 
@@ -387,10 +387,10 @@ export function RegisterPage() {
                     )}
                   </motion.div>
 
-                  <motion.div variants={itemVariant}>
+                  <motion.div variants={itemVariant} className="flex justify-center">
                     <Button
                       className={cn(
-                        "w-full h-14 text-lg transition-all duration-300",
+                        "w-[85%] h-12 text-sm shadow-luxury rounded-2xl transition-all duration-300",
                         role === "guest"
                           ? "bg-gold-500 hover:bg-gold-400 text-navy-950"
                           : role === "owner"
@@ -519,30 +519,29 @@ export function RegisterPage() {
                       </label>
                     </div>
 
-                    <Button type="submit" isLoading={isVerifying}>
-                      Complete Registration
-                    </Button>
+                    <div className="flex justify-center pt-2">
+                      <Button 
+                        type="submit" 
+                        isLoading={isVerifying}
+                        className="w-[85%] h-12 text-sm shadow-luxury rounded-2xl mx-auto block"
+                      >
+                        Complete Registration
+                      </Button>
+                    </div>
                   </motion.form>
 
                   <motion.div variants={itemVariant} className="mt-8">
                     <div className="relative flex items-center py-4">
-                      <div className="flex-grow border-t border-sand-200"></div>
-                      <span className="flex-shrink-0 mx-4 text-navy-800/40 text-[10px] font-bold uppercase tracking-[0.2em]">Or join with</span>
-                      <div className="flex-grow border-t border-sand-200"></div>
+                      <div className="flex-grow border-t border-sand-200/60"></div>
+                      <span className="flex-shrink-0 mx-4 text-navy-800/30 text-[9px] font-black uppercase tracking-[0.2em]">Or join with</span>
+                      <div className="flex-grow border-t border-sand-200/60"></div>
                     </div>
 
-                    <div className="flex flex-col gap-3 mt-4">
-                      <div className="flex justify-center">
-                        <GoogleLogin
-                          onSuccess={onGoogleSuccess}
-                          onError={() => setError("Google login failed")}
-                          theme="filled_blue"
-                          shape="pill"
-                          size="large"
-                          text="signup_with"
-                          width="100%"
-                        />
-                      </div>
+                    <div className="mt-2">
+                      <GoogleAuthButton 
+                        onSuccess={(cred) => onGoogleSuccess({ credential: cred })}
+                        isLoading={isVerifying}
+                      />
                     </div>
                   </motion.div>
 

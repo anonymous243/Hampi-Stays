@@ -6,7 +6,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 import { cn } from "../../utils/cn";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleAuthButton } from "../../components/auth/GoogleAuthButton";
 
 // GOOGLE_CLIENT_ID is handled by the GoogleLogin component internally
 
@@ -227,27 +227,28 @@ export function LoginPage() {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full h-12 text-base mt-2 shadow-gold" isLoading={isLoading}>
-                Sign In
-              </Button>
+              <div className="flex justify-center pt-2">
+                <Button 
+                  type="submit" 
+                  className="w-[85%] h-12 text-sm shadow-luxury rounded-2xl mx-auto block" 
+                  isLoading={isLoading}
+                >
+                  Sign In
+                </Button>
+              </div>
             </motion.form>
 
-            <motion.div variants={itemVariant} className="mt-6">
-              <div className="relative flex items-center py-3">
-                <div className="flex-grow border-t border-sand-200"></div>
-                <span className="flex-shrink-0 mx-4 text-navy-800/40 text-[10px] font-bold uppercase tracking-widest">Or</span>
-                <div className="flex-grow border-t border-sand-200"></div>
+            <motion.div variants={itemVariant} className="mt-8">
+              <div className="relative flex items-center py-4">
+                <div className="flex-grow border-t border-sand-200/60"></div>
+                <span className="flex-shrink-0 mx-4 text-navy-800/30 text-[9px] font-black uppercase tracking-[0.2em]">Or continue with</span>
+                <div className="flex-grow border-t border-sand-200/60"></div>
               </div>
 
-              <div className="flex justify-center mt-2 scale-90">
-                <GoogleLogin
-                  onSuccess={onGoogleSuccess}
-                  onError={onGoogleError}
-                  theme="filled_blue"
-                  shape="pill"
-                  size="medium"
-                  text="continue_with"
-                  width="100%"
+              <div className="mt-2">
+                <GoogleAuthButton 
+                  onSuccess={(cred) => onGoogleSuccess({ credential: cred })}
+                  isLoading={isLoading}
                 />
               </div>
             </motion.div>
