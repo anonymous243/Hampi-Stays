@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiClient } from "../../utils/apiClient";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
 import { 
   Search, MapPin, Star, ArrowRight, 
   Award, SlidersHorizontal,
@@ -36,6 +37,7 @@ interface Experience {
 }
 
 export function ExperiencesPage() {
+  const { requireAuth } = useAuth();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -272,7 +274,10 @@ export function ExperiencesPage() {
                       </div>
                     </div>
 
-                    <Button className="w-full rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold">
+                    <Button 
+                      onClick={() => requireAuth()}
+                      className="w-full rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold"
+                    >
                       Book This Experience
                       <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                     </Button>

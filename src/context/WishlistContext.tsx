@@ -52,7 +52,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = async (resortId: string) => {
     if (!user) {
-      toast.error('Please login to save resorts to your wishlist.');
+      // Force redirect to register if trying to interact without login
+      window.location.href = '/register?redirect=' + encodeURIComponent(window.location.pathname);
       return;
     }
 

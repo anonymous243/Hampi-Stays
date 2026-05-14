@@ -19,6 +19,7 @@ import { Button } from "../../components/ui/Button";
 import { cn } from "../../utils/cn";
 import { apiClient } from "../../utils/apiClient";
 import { useWishlist } from "../../context/WishlistContext";
+import { useProtectedAction } from "../../hooks/useProtectedAction";
 import type { Resort } from "../../types/resort";
 import { optimizeImage } from "../../utils/image";
 
@@ -32,6 +33,7 @@ const AMENITY_ICON: Record<string, React.ReactNode> = {
 
 export function ResortDetailPage() {
   const { isFavorite, toggleWishlist } = useWishlist();
+  const { protect } = useProtectedAction();
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const [galleryIdx, setGalleryIdx] = useState(0);
@@ -194,7 +196,10 @@ export function ResortDetailPage() {
                     <Share2 className="w-4 h-4" /> Share
                   </button>
                   <button 
-                    onClick={() => toggleWishlist(resort.id)}
+                    onClick={() => protect(
+                      () => toggleWishlist(resort.id),
+                      { message: "Save to your collection", view: "register" }
+                    )}
                     className={cn(
                       "p-3 rounded-2xl bg-white border border-sand-200 transition-all shadow-sm active:scale-95",
                       isFavorite(resort.id) ? "text-red-500 border-red-100 bg-red-50" : "text-navy-950 hover:text-red-500"

@@ -11,6 +11,7 @@ import { PremiumIcon } from "../ui/PremiumIcon";
 import type { Resort } from "../../types/resort";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
+import { useProtectedAction } from "../../hooks/useProtectedAction";
 import { useEffect } from "react";
 import { apiClient } from "../../utils/apiClient";
 import { optimizeImage } from "../../utils/image";
@@ -48,14 +49,19 @@ export function ResortCard({
 }: ResortCardProps) {
   const { user } = useAuth();
   const { isFavorite, toggleWishlist } = useWishlist();
+  const { protect } = useProtectedAction();
   const [imgError, setImgError] = useState(false);
 
   const isFav = isFavorite(resort.id);
 
-  const handleToggleWishlist = async (e: React.MouseEvent) => {
+  const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    await toggleWishlist(resort.id);
+    
+    protect(
+      () => toggleWishlist(resort.id),
+      { message: "Save to your collection", view: "register" }
+    );
   };
 
   // ── 3D TILT LOGIC ──

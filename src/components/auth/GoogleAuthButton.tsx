@@ -19,7 +19,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
   const [isSwiped, setIsSwiped] = useState(false);
   const x = useMotionValue(0);
   const controls = useAnimation();
-  
+
   // Transform x position to various visual properties
   // The slider track is about 200px
   const opacity = useTransform(x, [0, 150], [1, 0]);
@@ -31,7 +31,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
   useEffect(() => {
     // Initialize Google Identity Services if not already done
     const clientId = "389686748462-nh36uj8ht8go4unb9607sclhgl1plb7r.apps.googleusercontent.com";
-    
+
     if (window.google) {
       window.google.accounts.id.initialize({
         client_id: clientId,
@@ -54,12 +54,12 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
           // If prompt isn't shown (e.g. blocked), we can't easily force it with a custom button 
           // without rendering their official button, but we'll try to show the picker
           try {
-             // Fallback: This is sometimes restricted but worth a try
-             window.google.accounts.id.renderButton(
-               document.getElementById('hidden-google-button'),
-               { theme: 'outline', size: 'large' }
-             );
-             document.querySelector<HTMLElement>('#hidden-google-button div[role="button"]')?.click();
+            // Fallback: This is sometimes restricted but worth a try
+            window.google.accounts.id.renderButton(
+              document.getElementById('hidden-google-button'),
+              { theme: 'outline', size: 'large' }
+            );
+            document.querySelector<HTMLElement>('#hidden-google-button div[role="button"]')?.click();
           } catch (e) {
             console.error("Could not trigger Google Login", e);
           }
@@ -73,7 +73,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
       setIsSwiped(true);
       await controls.start({ x: 210, transition: { type: "spring", stiffness: 500, damping: 30 } });
       triggerGoogleAuth();
-      
+
       // Success feedback animation
       setTimeout(() => {
         controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 25 } });
@@ -103,7 +103,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         )}
       >
         {/* Animated Shine Effect */}
-        <motion.div 
+        <motion.div
           style={{ x: shineX }}
           className="absolute inset-0 bg-gradient-to-r from-transparent via-gold-200/20 to-transparent skew-x-[-20deg] z-10 pointer-events-none"
         />
@@ -120,7 +120,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
               setIsSwiped(true);
               await controls.start({ x: 160, transition: { type: "spring", stiffness: 500, damping: 30 } });
               triggerGoogleAuth();
-              
+
               setTimeout(() => {
                 controls.start({ x: 0, transition: { type: "spring", stiffness: 300, damping: 25 } });
                 setIsSwiped(false);
@@ -152,7 +152,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         </motion.div>
 
         {/* Text */}
-        <motion.span 
+        <motion.span
           style={{ opacity }}
           className="text-[13px] font-bold text-navy-950 tracking-tight z-20"
         >
@@ -160,7 +160,7 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
         </motion.span>
 
         {/* Swipe Prompt Overlay */}
-        <motion.div 
+        <motion.div
           style={{ opacity: glowOpacity }}
           className="absolute inset-0 bg-gold-500/5 pointer-events-none z-0"
         />
@@ -172,10 +172,10 @@ export function GoogleAuthButton({ onSuccess, isLoading, text = "Continue with G
           ))}
         </div>
       </motion.button>
-      
+
       {/* Background Track Hint */}
       <div className="absolute inset-x-1.5 top-1.5 bottom-1.5 bg-sand-50/40 rounded-2xl -z-10 pointer-events-none border border-dashed border-gold-200/30 flex items-center justify-end pr-6">
-        <motion.div 
+        <motion.div
           animate={{ x: [0, 8, 0], opacity: [0.3, 0.6, 0.3] }}
           transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
           className="text-[8px] font-black uppercase tracking-[0.3em] text-gold-600/30"

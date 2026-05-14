@@ -13,6 +13,7 @@ interface BookingWidgetProps {
 }
 
 import { useAuth } from "../../context/AuthContext";
+import { useProtectedAction } from "../../hooks/useProtectedAction";
 
 export function BookingWidget({ 
   resort, 
@@ -22,7 +23,7 @@ export function BookingWidget({
   selectedRoomId 
 }: BookingWidgetProps) {
   const navigate = useNavigate();
-  const { isAuthenticated, setShowAuthModal } = useAuth();
+  const { protect } = useProtectedAction();
   const [checkIn, setCheckIn] = useState(initialCheckIn || "");
   const [checkOut, setCheckOut] = useState(initialCheckOut || "");
   const [adults, setAdults] = useState(initialAdults);
@@ -90,24 +91,21 @@ export function BookingWidget({
   const handleBook = () => {
     if (!selectedRoomId || !checkIn || !checkOut) return;
     
-    if (!isAuthenticated) {
-      navigate("/register");
-      return;
-    }
-    
-    navigate("/checkout", {
-      state: {
-        resortId: resort.id,
-        resortName: resort.name,
-        roomId: selectedRoomId,
-        roomName: selectedRoom?.name,
-        checkIn,
-        checkOut,
-        adults,
-        totalPrice: total,
-        image: resort.images[0]
-      }
-    });
+    protect(() => {
+      navigate("/checkout", {
+        state: {
+          resortId: resort.id,
+          resortName: resort.name,
+          roomId: selectedRoomId,
+          roomName: selectedRoom?.name,
+          checkIn,
+          checkOut,
+          adults,
+          totalPrice: total,
+          image: resort.images[0]
+        }
+      });
+    }, { message: "Complete Your Reservation", view: "register" });
   };
 
   return (

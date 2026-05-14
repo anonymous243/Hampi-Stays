@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
 import { 
   ShieldCheck, Search, Sparkles, CheckCircle2,
   Calendar, Clock, MapPin, X, Award, Star, ArrowRight
@@ -40,7 +41,7 @@ interface Guide {
 }
 
 export function LocalExpertsPage() {
-  const { user } = useAuth();
+  const { user, requireAuth } = useAuth();
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -257,7 +258,12 @@ export function LocalExpertsPage() {
                 {/* Footer Action */}
                 <div className="p-8 pt-0 flex gap-4">
                   <Button 
-                    onClick={() => { setSelectedGuide(guide); setBookingSuccess(false); }}
+                    onClick={() => { 
+                      if (requireAuth()) {
+                        setSelectedGuide(guide); 
+                        setBookingSuccess(false); 
+                      }
+                    }}
                     className="flex-1 rounded-2xl h-14 bg-navy-950 text-white group/btn border-none font-bold"
                   >
                     Book Expert

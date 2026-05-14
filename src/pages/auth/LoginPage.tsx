@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
@@ -18,6 +18,8 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const premiumMessage = searchParams.get("message");
   
   const hampiImages = [
     "/images/hampi-1.png", // Stone Chariot
@@ -181,10 +183,21 @@ export function LoginPage() {
               <ArrowLeft className="w-6 h-6" />
             </Link>
 
-            <motion.div variants={itemVariant} className="flex justify-center mb-4 mt-2">
-              <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
+            <motion.div variants={itemVariant} className="flex flex-col items-center mb-4 mt-2">
+              <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300 mb-6">
                 <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
               </Link>
+              
+              {premiumMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gold-500/10 border border-gold-500/20 rounded-full mb-2 shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4 text-gold-600 animate-pulse" />
+                  <span className="text-[10px] font-black text-gold-700 uppercase tracking-[0.2em]">{premiumMessage}</span>
+                </motion.div>
+              )}
             </motion.div>
 
             <motion.div variants={itemVariant} className="text-center mb-6">

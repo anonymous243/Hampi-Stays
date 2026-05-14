@@ -30,8 +30,10 @@ interface AuthContextType {
   logout: () => void;
   isVerifying: boolean;
   showAuthModal: boolean;
-  setShowAuthModal: (show: boolean, view?: "login" | "register") => void;
+  setShowAuthModal: (show: boolean, options?: { view?: "login" | "register", message?: string }) => void;
   authModalView: "login" | "register";
+  authMessage: string | null;
+  requireAuth: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showAuthModal, _setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState<"login" | "register">("login");
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) setIsLoading(false);
@@ -91,8 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const setShowAuthModal = (show: boolean, view: "login" | "register" = "login") => {
-    setAuthModalView(view);
+  const setShowAuthModal = (show: boolean, options: { view?: "login" | "register", message?: string } = {}) => {
+    if (options.view) setAuthModalView(options.view);
+    if (options.message) setAuthMessage(options.message);
+    else if (!show) setAuthMessage(null); // Clear message when closing
     _setShowAuthModal(show);
   };
 
@@ -183,6 +188,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = "/"; // Force refresh to clear all states for security
   };
 
+  const requireAuth = () => {
+    if (!user) {
+      window.location.href = '/register?redirect=' + encodeURIComponent(window.location.pathname);
+      return false;
+    }
+    return true;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -197,7 +210,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateUser,
       showAuthModal,
       setShowAuthModal,
-      authModalView
+      authModalView,
+      authMessage,
+      requireAuth
     }}>
       {children}
     </AuthContext.Provider>

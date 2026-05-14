@@ -38,6 +38,7 @@ import { DashboardSelector } from "./components/shared/DashboardSelector";
 import { ResortSetupPage } from "./pages/owner/ResortSetupPage";
 import { InventoryPage } from "./pages/owner/InventoryPage";
 import { ScrollToTop } from "./components/shared/ScrollToTop";
+import { AuthModal } from "./components/auth/AuthModal";
 
 import { useAuth } from "./context/AuthContext";
 import { useSystem } from "./context/SystemContext";
@@ -71,7 +72,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login?message=Premium Access Required" replace />;
 };
 
 // Guide Service Route Wrapper
@@ -252,6 +253,7 @@ function App() {
       />
       <ScrollToTop />
       <AnimatedRoutes />
+      <AuthModal />
       <CookieConsent />
     </Router>
   );

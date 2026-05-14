@@ -25,6 +25,7 @@ export function RegisterPage() {
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const premiumMessage = searchParams.get("message");
 
   
   const hampiImages = [
@@ -222,10 +223,21 @@ export function RegisterPage() {
             </button>
 
             {/* Logo */}
-            <div className="flex justify-center mb-8 mt-4 relative z-20">
-              <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300">
+            <div className="flex flex-col items-center mb-8 mt-4 relative z-20">
+              <Link to="/" className="inline-block transition-transform hover:scale-105 duration-300 mb-6">
                 <img src="/logo-full.png" alt="HampiStays" className="h-20 md:h-16 w-auto object-contain drop-shadow-md" />
               </Link>
+
+              {premiumMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gold-500/10 border border-gold-500/20 rounded-full mb-2 shadow-sm"
+                >
+                  <Compass className="w-4 h-4 text-gold-600 animate-pulse" />
+                  <span className="text-[10px] font-black text-gold-700 uppercase tracking-[0.2em]">{premiumMessage}</span>
+                </motion.div>
+              )}
             </div>
 
             <AnimatePresence mode="wait">

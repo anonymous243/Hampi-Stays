@@ -6,6 +6,7 @@ import { cn } from "../../utils/cn";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useSystem } from "../../context/SystemContext";
+import { useProtectedAction } from "../../hooks/useProtectedAction";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -15,6 +16,7 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout, user, setShowAuthModal } = useAuth();
+  const { protect } = useProtectedAction();
   const { settings } = useSystem();
   const guideServiceEnabled = settings?.guideServiceEnabled ?? true;
 
@@ -184,11 +186,10 @@ export function Navbar() {
                         : "bg-gold-500 text-navy-950 hover:bg-white hover:text-navy-950 shadow-2xl shadow-gold-500/20"
                     )}
                     onClick={() => {
-                      if (isAuthenticated) {
-                        navigate("/resorts");
-                      } else {
-                        navigate("/register");
-                      }
+                      protect(
+                        () => navigate("/resorts"),
+                        { message: "Unlock Luxury Bookings", view: "register" }
+                      );
                     }}
                   >
                     Book Now
