@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Compass, Landmark, ArrowRight, Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Link } from "react-router-dom";
+import { cn } from "../../utils/cn";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 import { PremiumIcon } from "../../components/ui/PremiumIcon";
 
