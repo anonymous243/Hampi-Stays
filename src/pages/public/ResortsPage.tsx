@@ -4,7 +4,7 @@
 // list/map view toggle, and compare functionality.
 // ============================================================
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSearchParams as useRouterSearchParams } from "react-router-dom";
 import { SlidersHorizontal, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
@@ -38,8 +38,15 @@ export function ResortsPage() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [compareItems, setCompareItems] = useState<CompareItem[]>([]);
 
+  // 1. Stabilize parameters to prevent redundant fetches
+  const searchArgs = useMemo(() => ({
+    location,
+    adults,
+    children
+  }), [location, adults, children]);
+
   const { resorts, total, isEmpty, maxPrice, isLoading, error } = useResorts({
-    search: { location, adults, children },
+    search: searchArgs,
     filters,
     sort,
   });

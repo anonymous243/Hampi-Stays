@@ -2,7 +2,7 @@
 // ResortCard — Luxury resort card for listing page
 // ============================================================
 
-import { useState } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { Link } from "react-router-dom";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Star, MapPin, Heart, Check } from "lucide-react";
@@ -12,7 +12,6 @@ import type { Resort } from "../../types/resort";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useProtectedAction } from "../../hooks/useProtectedAction";
-import { useEffect } from "react";
 import { apiClient } from "../../utils/apiClient";
 import { optimizeImage } from "../../utils/image";
 
@@ -40,7 +39,7 @@ const TYPE_COLORS: Record<Resort["type"], string> = {
   budget: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
-export function ResortCard({
+export const ResortCard = memo(function ResortCard({
   resort,
   index = 0,
   isInCompare = false,
@@ -219,5 +218,5 @@ export function ResortCard({
       </motion.div>
     </div>
   );
-}
+});
 

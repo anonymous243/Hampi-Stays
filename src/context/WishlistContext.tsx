@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
 import { apiClient } from '../utils/apiClient';
 import type { Resort } from '../types/resort';
@@ -9,42 +10,71 @@ interface WishlistContextType {
   isLoading: boolean;
   isFavorite: (resortId: string) => boolean;
   toggleWishlist: (resortId: string) => Promise<void>;
-  refreshWishlist: () => Promise<void>;
+  refreshWishlist: () => void;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [wishlist, setWishlist] = useState<Resort[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchWishlist = useCallback(async () => {
-    if (!user) {
-      setWishlist([]);
-      return;
-    }
-    setIsLoading(true);
-    try {
+  // 1. Centralized Wishlist Query
+  const { data: wishlist = [], isLoading } = useQuery({
+    queryKey: ['wishlist', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       const data = await apiClient.get<Resort[]>(`/users/${user.id}/wishlist`);
-      setWishlist(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to fetch wishlist:', err);
-    } finally {
-      setIsLoading(false);
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // 2. Optimistic Mutation
+  const mutation = useMutation({
+    mutationFn: async (resortId: string) => {
+      if (!user) throw new Error('Not authenticated');
+      return apiClient.post<{ saved: boolean }>(`/wishlist/toggle`, {
+        userId: user.id,
+        resortId
+      });
+    },
+    // This is the "Instant" part
+    onMutate: async (resortId) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: ['wishlist', user?.id] });
+
+      // Snapshot the previous value
+      const previousWishlist = queryClient.getQueryData<Resort[]>(['wishlist', user?.id]);
+
+      // Optimistically update to the new value
+      if (previousWishlist) {
+        const isCurrentlyFavorite = previousWishlist.some(r => r.id === resortId);
+        const newWishlist = isCurrentlyFavorite
+          ? previousWishlist.filter(r => r.id !== resortId)
+          : [...previousWishlist, { id: resortId } as Resort]; // Temporary partial object
+        
+        queryClient.setQueryData(['wishlist', user?.id], newWishlist);
+      }
+
+      return { previousWishlist };
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err, resortId, context) => {
+      if (context?.previousWishlist) {
+        queryClient.setQueryData(['wishlist', user?.id], context.previousWishlist);
+      }
+      toast.error("Failed to update wishlist");
+    },
+    // Always refetch after error or success to ensure sync
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
+    },
+    onSuccess: (data) => {
+      toast.success(data.saved ? "Added to wishlist!" : "Removed from wishlist");
     }
-  }, [user]);
-
-  useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
-
-  // Listen for global updates (e.g. from other tabs or if we still use custom events)
-  useEffect(() => {
-    const handleUpdate = () => fetchWishlist();
-    window.addEventListener('wishlist-updated', handleUpdate);
-    return () => window.removeEventListener('wishlist-updated', handleUpdate);
-  }, [fetchWishlist]);
+  });
 
   const isFavorite = useCallback((resortId: string) => {
     return wishlist.some(r => r.id === resortId);
@@ -52,42 +82,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = async (resortId: string) => {
     if (!user) {
-      // Force redirect to register if trying to interact without login
       window.location.href = '/register?redirect=' + encodeURIComponent(window.location.pathname);
       return;
     }
+    await mutation.mutateAsync(resortId);
+  };
 
-    try {
-      // Optimistic update
-      const wasFavorite = isFavorite(resortId);
-      if (wasFavorite) {
-        setWishlist(prev => prev.filter(r => r.id !== resortId));
-      } else {
-        // We don't have the full resort object here usually, 
-        // so we'll wait for the server response or just re-fetch
-      }
-
-      const response = await apiClient.post<{ saved: boolean }>(`/wishlist/toggle`, {
-        userId: user.id,
-        resortId
-      });
-      
-      if (response.saved) {
-        toast.success("Added to wishlist!");
-      } else {
-        toast.success("Removed from wishlist.");
-      }
-      
-      // Re-fetch to be sure and get full data if added
-      await fetchWishlist();
-      
-      // Dispatch for any component not using context
-      window.dispatchEvent(new CustomEvent('wishlist-updated'));
-    } catch (err) {
-      console.error('Wishlist toggle failed:', err);
-      // Rollback if needed or re-fetch
-      await fetchWishlist();
-    }
+  const refreshWishlist = () => {
+    queryClient.invalidateQueries({ queryKey: ['wishlist', user?.id] });
   };
 
   return (
@@ -96,7 +98,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       isLoading, 
       isFavorite, 
       toggleWishlist, 
-      refreshWishlist: fetchWishlist 
+      refreshWishlist 
     }}>
       {children}
     </WishlistContext.Provider>

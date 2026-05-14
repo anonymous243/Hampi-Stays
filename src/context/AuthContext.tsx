@@ -69,9 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (token) {
         setIsVerifying(true);
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser));
+            // UNLOCK UI: We have a local user, so let the app render
+            setIsLoading(false); 
+          } catch (e) {
+            console.error("Failed to parse saved user", e);
+          }
+        }
+        
         try {
-          if (savedUser) setUser(JSON.parse(savedUser));
-          
           const data = await apiClient.get<{ user: User }>('/auth/me');
           if (data?.user) {
             setUser(data.user);
@@ -84,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } finally {
           setIsVerifying(false);
-          setIsLoading(false);
+          setIsLoading(false); // Ensure loading is false if not already set
         }
       } else {
         setIsLoading(false);
