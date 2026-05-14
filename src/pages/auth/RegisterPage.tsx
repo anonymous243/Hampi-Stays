@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { ArrowLeft, Luggage, Key, Check, Users, Mail, Smartphone, ShieldCheck, RefreshCw, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Luggage, Key, Check, Users, Mail, Smartphone, ShieldCheck, RefreshCw, CheckCircle2, Compass } from "lucide-react";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { cn } from "../../utils/cn";
@@ -344,16 +344,12 @@ export function RegisterPage() {
                         )}
                       >
                         <div className="flex items-center gap-4">
-                          <div
-                            className={cn(
-                              "w-12 h-12 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-                              role === "guide"
-                                ? "bg-navy-100 text-navy-600"
-                                : "bg-sand-100 text-navy-800/40 group-hover:bg-navy-50 group-hover:text-navy-500"
-                            )}
-                          >
-                            <span className="flex-shrink-0"><Users className="w-6 h-6" /></span>
-                          </div>
+                        <PremiumIcon 
+                          icon={Compass} 
+                          variant={role === "guide" ? "gold" : "sand"} 
+                          size="md" 
+                          animate={false} 
+                        />
                           <div>
                             <h3
                               className={cn(
