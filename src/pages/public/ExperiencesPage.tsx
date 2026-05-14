@@ -4,9 +4,10 @@ import { motion } from "framer-motion";
 import { 
   Search, MapPin, Star, ArrowRight, 
   Award, SlidersHorizontal,
-  Compass, History, Mountain, Sparkles, Camera, IndianRupee
+  Compass, History, Mountain, Sparkles, Camera, IndianRupee, X
 } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { Link } from "react-router-dom";
 import { cn } from "../../utils/cn";
 import { ImmersiveBackground } from "../../components/layout/ImmersiveBackground";
 
@@ -37,6 +38,18 @@ export function ExperiencesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+
+  const fetchSettings = async () => {
+    try {
+      const data = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`).then(res => res.json());
+      if (data && typeof data.guideServiceEnabled !== 'undefined') {
+        setGuideServiceEnabled(data.guideServiceEnabled);
+      }
+    } catch (err) {
+      console.error("Failed to fetch settings", err);
+    }
+  };
 
   const categories = [
     { name: "All", icon: Compass },
@@ -46,6 +59,7 @@ export function ExperiencesPage() {
   ];
 
   useEffect(() => {
+    fetchSettings();
     const fetchExperiences = async () => {
       try {
         const data = await apiClient.get<Experience[]>('/experiences');
@@ -66,6 +80,33 @@ export function ExperiencesPage() {
     const matchesCategory = selectedCategory === "All" || exp.title.includes(selectedCategory) || exp.description.includes(selectedCategory);
     return matchesSearch && matchesCategory;
   });
+
+  if (!guideServiceEnabled) {
+    return (
+      <div className="min-h-screen bg-sand-50 pt-40 pb-20 flex items-center justify-center">
+        <div className="container mx-auto px-4 text-center max-w-2xl">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+            <div className="w-24 h-24 bg-red-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-sm">
+              <Compass className="w-12 h-12 text-red-400" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-navy-950 mb-6">Service <span className="text-red-500 italic">Paused</span></h1>
+            <p className="text-lg text-navy-950/60 leading-relaxed mb-10">
+              Our curated Hampi experiences are currently paused for seasonal maintenance. 
+              We'll be back with new storytellers and immersive journeys very soon.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/resorts">
+                <Button className="h-14 px-8 rounded-2xl bg-navy-950 text-white w-full sm:w-auto">Explore Stays</Button>
+              </Link>
+              <Link to="/about">
+                <Button variant="outline" className="h-14 px-8 rounded-2xl border-sand-200 text-navy-950 w-full sm:w-auto">About HampiStays</Button>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-sand-50 pb-32">

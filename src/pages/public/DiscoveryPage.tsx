@@ -31,8 +31,21 @@ export function DiscoveryPage() {
   const [hoveredPOI, setHoveredPOI] = useState<POI | null>(null);
   const [bgError, setBgError] = useState(false);
   const [poiErrors, setPoiErrors] = useState<Record<string, boolean>>({});
+  const [guideServiceEnabled, setGuideServiceEnabled] = useState(true);
+
+  const fetchSettings = async () => {
+    try {
+      const data = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`).then(res => res.json());
+      if (data && typeof data.guideServiceEnabled !== 'undefined') {
+        setGuideServiceEnabled(data.guideServiceEnabled);
+      }
+    } catch (err) {
+      console.error("Failed to fetch settings", err);
+    }
+  };
 
   useEffect(() => {
+    fetchSettings();
     const fetchPOI = async () => {
       try {
         const data = await apiClient.get<POI[]>('/heritage/poi');
@@ -45,6 +58,33 @@ export function DiscoveryPage() {
     };
     fetchPOI();
   }, []);
+
+  if (!guideServiceEnabled) {
+    return (
+      <div className="min-h-screen bg-navy-950 flex items-center justify-center pt-20">
+        <div className="container mx-auto px-4 text-center max-w-2xl">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+            <div className="w-24 h-24 bg-gold-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-sm border border-gold-500/20">
+              <Compass className="w-12 h-12 text-gold-500" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">Discovery <span className="text-gold-400 italic">Paused</span></h1>
+            <p className="text-lg text-white/60 leading-relaxed mb-10">
+              Our interactive mapping project is currently undergoing data synchronization. 
+              Please check back soon for the updated heritage grid.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/resorts">
+                <Button className="h-14 px-8 rounded-2xl bg-gold-500 text-navy-950 w-full sm:w-auto">Explore Stays</Button>
+              </Link>
+              <Link to="/">
+                <Button variant="outline" className="h-14 px-8 rounded-2xl border-white/20 text-white w-full sm:w-auto">Home</Button>
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-navy-950 overflow-hidden relative">

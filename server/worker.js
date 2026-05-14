@@ -256,7 +256,7 @@ app.get('/admin/stats', authMiddleware, adminMiddleware, async (c) => {
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
-app.post('/admin/settings', authMiddleware, adminMiddleware, async (c) => {
+app.on(['POST', 'PATCH'], '/admin/settings', authMiddleware, adminMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   const { guideServiceEnabled, defaultCommissionRate } = await c.req.json();
   try {

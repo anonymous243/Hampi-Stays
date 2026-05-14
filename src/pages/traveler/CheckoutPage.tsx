@@ -112,8 +112,14 @@ export function CheckoutPage() {
 
       // 3. Launch Razorpay Checkout
       if (booking.orderId) {
+        const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        
+        if (!razorpayKey) {
+          throw new Error("Razorpay Key is missing. Please ensure VITE_RAZORPAY_KEY_ID is set in your environment variables.");
+        }
+
         const options = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          key: razorpayKey,
           amount: Math.round(grandTotal * 100),
           currency: "INR",
           name: "HampiStays Luxury",

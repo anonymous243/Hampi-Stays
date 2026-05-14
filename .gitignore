@@ -1,37 +1,29 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.*
-
-# Next.js
-.next/
-out/
-
-# Build
-build/
-dist/
-
-# Env & Secrets
-.env
-.env.local
-.env.production
-.env.development
-*.pem
-
-# Debug logs
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Misc
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-*.tsbuildinfo
-next-env.d.ts
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# IDEs
-.vscode/
-.idea/
-
-# Prisma
-/hampi-stays/app/generated/prisma
+/src/generated/prisma
+.env
+.env.production
+.env.local
