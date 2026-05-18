@@ -238,7 +238,7 @@ export function PrivacyPolicyPage() {
               icon={Database}
             >
               <p>
-                We collect the following categories of personal information:
+                We collect the following categories of personal information to provide you with a premium, secure travel booking and local guide experience:
               </p>
 
               <h4 className="font-bold text-navy-950 mt-4 text-base">
@@ -246,24 +246,19 @@ export function PrivacyPolicyPage() {
               </h4>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  <strong>Account Data:</strong> Name, email address, phone
-                  number, and password when you create an account
+                  <strong>Account Data:</strong> Name, email address, phone number (stored with secure AES-256 encryption at rest), and password (salted and cryptographically hashed) when you create an account.
                 </li>
                 <li>
-                  <strong>Profile Data:</strong> Profile photo, preferences,
-                  saved resorts, and communication preferences
+                  <strong>Host & Local Expert Data:</strong> Business name, property listings, GST Numbers, and Tour Guide identification data (e.g., government-issued identity cards or guide licenses, all processed and stored with full AES-256 database-level encryption).
                 </li>
                 <li>
-                  <strong>Booking Data:</strong> Check-in/check-out dates, number
-                  of guests, special requests, and booking history
+                  <strong>Booking Data:</strong> Check-in/check-out dates, guest details, airport pickup preferences, special requests, and transaction reference numbers.
                 </li>
                 <li>
-                  <strong>Payment Data:</strong> Credit/debit card details, UPI
-                  IDs, and billing address (processed by secure payment partners)
+                  <strong>Payment Data:</strong> Secure order details and transaction reference hashes. Raw credit card numbers, bank credentials, and UPI pins are processed directly by our payment gateway and are **never** stored on our servers.
                 </li>
                 <li>
-                  <strong>Communication Data:</strong> Messages exchanged with
-                  hosts, reviews, ratings, and support inquiries
+                  <strong>Communication Data:</strong> Reviews, ratings, expert guide inquiries, and support messages.
                 </li>
               </ul>
 
@@ -272,16 +267,13 @@ export function PrivacyPolicyPage() {
               </h4>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  <strong>Device Data:</strong> IP address, browser type,
-                  operating system, and device identifiers
+                  <strong>Device Data:</strong> IP address, browser type, operating system, and secure device identifiers.
                 </li>
                 <li>
-                  <strong>Usage Data:</strong> Pages visited, search queries,
-                  click patterns, and session duration
+                  <strong>Usage Data:</strong> Visited stays, search queries, click patterns, and session metrics.
                 </li>
                 <li>
-                  <strong>Location Data:</strong> Approximate location based on
-                  IP address (precise location only with your consent)
+                  <strong>Location Data:</strong> Proximity location based on IP address or browser permissions (used to match you with nearby local tour guides).
                 </li>
               </ul>
             </PolicySection>
@@ -405,32 +397,23 @@ export function PrivacyPolicyPage() {
               icon={Users}
             >
               <p>
-                We do not sell your personal data. We may share information
-                with:
+                We do not sell your personal data. We may share information with:
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  <strong>Property Owners/Hosts:</strong> Name, contact
-                  details, and booking information necessary to fulfill your
-                  reservation
+                  <strong>Property Owners & Tour Guides:</strong> Name, contact details, and booking information necessary to fulfill your reservation and guided tour experience.
                 </li>
                 <li>
-                  <strong>Payment Processors:</strong> Razorpay, Stripe, and
-                  other PCI-DSS certified partners to process transactions
-                  securely
+                  <strong>Payment Processors:</strong> Transactions are securely handled by **Razorpay** (our fully PCI-DSS certified partner) to process your payments safely.
                 </li>
                 <li>
-                  <strong>Analytics Partners:</strong> Aggregated, anonymized
-                  data to improve our services (Google Analytics, Mixpanel)
+                  <strong>Media & Cloud Hosting:</strong> Property images, user profiles, and KYC documents are securely hosted via **Cloudinary**.
                 </li>
                 <li>
-                  <strong>Legal Authorities:</strong> When required by law, court
-                  order, or to protect the safety and rights of our users
+                  <strong>Communication Channels:</strong> Transactional emails and verification/reset links are delivered via **Resend**.
                 </li>
                 <li>
-                  <strong>Service Providers:</strong> Cloud hosting (AWS),
-                  email delivery, and customer support tools — all bound by
-                  strict data processing agreements
+                  <strong>Legal Authorities:</strong> When required by law, court order, or to protect the safety and rights of our users.
                 </li>
               </ul>
             </PolicySection>
@@ -442,35 +425,27 @@ export function PrivacyPolicyPage() {
               icon={Lock}
             >
               <p>
-                We implement industry-standard security measures to protect
-                your data:
+                We implement industry-standard cryptographic and infrastructural security measures to protect your data:
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  TLS 1.3 encryption for all data in transit
+                  <strong>AES-256 Database-Level Encryption at Rest:</strong> High-sensitivity personal data, including **Phone Numbers, Government ID numbers, and GST Numbers**, is cryptographically encrypted at rest inside our database using secure symmetric keys.
                 </li>
                 <li>
-                  AES-256 encryption for sensitive data at rest
+                  <strong>Password Hashing:</strong> All password credentials are salted and securely hashed utilizing **bcrypt** (12 rounds) and can never be retrieved or read in plain text.
                 </li>
                 <li>
-                  Regular security audits and penetration testing by
-                  third-party firms
+                  <strong>TLS 1.3 Transport Security:</strong> Secure encrypted network tunnels for all data in transit across our Cloudflare Pages hosting and Cloudflare Workers serverless backend.
                 </li>
                 <li>
-                  Multi-factor authentication (MFA) available for all accounts
+                  <strong>Regular Audits:</strong> Periodic review of our system access logs and DB access policies.
                 </li>
                 <li>
-                  SOC 2 Type II compliant cloud infrastructure
-                </li>
-                <li>
-                  Access controls and role-based permissions for internal
-                  staff
+                  <strong>Access Controls:</strong> Role-based permissions preventing unauthorized internal staff access.
                 </li>
               </ul>
               <p>
-                While we strive for maximum security, no system is 100%
-                impenetrable. We encourage users to use strong passwords and
-                enable MFA.
+                While we strive for maximum security, no system is 100% impenetrable. We encourage users to use strong passwords and enable multi-factor security.
               </p>
             </PolicySection>
 
