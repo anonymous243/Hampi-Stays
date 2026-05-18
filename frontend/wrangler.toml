@@ -1,0 +1,14 @@
+# Cloudflare Pages Configuration
+name = "hampistays"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-05-13"
+compatibility_flags = [ "nodejs_compat" ]
+
+[pages_build_config]
+build_command = "npm run build"
+destination_dir = "dist"
+
+# Environment Variables for Build
+[vars]
+VITE_API_URL = "https://hampistays.anonymous24tr.workers.dev"
+
