@@ -222,7 +222,7 @@ export function TermsOfServicePage() {
                 <li>
                   Notify us immediately at{" "}
                   <span className="font-semibold text-navy-950">
-                    security@hampistays.com
+                    stay@hampistays.com
                   </span>{" "}
                   if you suspect unauthorized access
                 </li>
@@ -306,54 +306,22 @@ export function TermsOfServicePage() {
               title="Cancellations & Refunds"
             >
               <p>
-                Cancellation policies may vary by property. The following
-                general guidelines apply:
+                To provide flexibility for travelers while respecting the operational schedules of our luxury resort hosts, the standard cancellation policy for HampiStays bookings is as follows:
               </p>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse mt-2">
-                  <thead>
-                    <tr className="border-b border-sand-200">
-                      <th className="text-left py-3 pr-4 font-bold text-navy-950">
-                        Timeframe
-                      </th>
-                      <th className="text-left py-3 pr-4 font-bold text-navy-950">
-                        Refund
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-navy-800/70">
-                    <tr className="border-b border-sand-100">
-                      <td className="py-3 pr-4">30+ days before check-in</td>
-                      <td className="py-3 pr-4 font-semibold text-emerald-600">
-                        Full refund (100%)
-                      </td>
-                    </tr>
-                    <tr className="border-b border-sand-100">
-                      <td className="py-3 pr-4">15–29 days before check-in</td>
-                      <td className="py-3 pr-4 font-semibold text-gold-600">
-                        75% refund
-                      </td>
-                    </tr>
-                    <tr className="border-b border-sand-100">
-                      <td className="py-3 pr-4">7–14 days before check-in</td>
-                      <td className="py-3 pr-4 font-semibold text-sunset-600">
-                        50% refund
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 pr-4">Less than 7 days</td>
-                      <td className="py-3 pr-4 font-semibold text-red-500">
-                        No refund
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p className="mt-3">
-                Refunds are processed within 7–10 business days to the original
-                payment method. Special circumstances (medical emergencies,
-                natural disasters) may be considered on a case-by-case basis.
-              </p>
+              <ul className="list-disc pl-6 space-y-3 mt-2">
+                <li>
+                  <span className="font-semibold text-navy-950">Free Cancellation (Up to 48 Hours):</span> You may cancel your reservation free of charge up to <span className="font-semibold text-emerald-600">48 hours</span> before your scheduled check-in time (e.g., if check-in is at 2:00 PM on Friday, you must cancel by 2:00 PM on the Wednesday prior) for a <span className="font-semibold text-emerald-600">100% full refund</span>.
+                </li>
+                <li>
+                  <span className="font-semibold text-navy-950">Late Cancellation (Within 48 Hours):</span> Cancellations made within <span className="font-semibold text-red-500">48 hours</span> of your scheduled check-in time, or failure to check in (no-shows), are non-refundable and subject to a fee equal to <span className="font-semibold text-red-500">100% of the total booking cost</span>.
+                </li>
+                <li>
+                  <span className="font-semibold text-navy-950">Refund Processing:</span> Approved refunds will be automatically credited back to your original payment source (credit card, net banking, or UPI) within <span className="font-semibold text-navy-950">7 to 10 business days</span>.
+                </li>
+                <li>
+                  <span className="font-semibold text-navy-950">Special Circumstances:</span> Extenuating circumstances (such as official travel restrictions, severe weather alerts, or medical emergencies) will be handled transparently on a case-by-case basis.
+                </li>
+              </ul>
             </PolicySection>
 
             <PolicySection id="conduct" number="7" title="User Conduct">
@@ -488,7 +456,7 @@ export function TermsOfServicePage() {
                 <p>
                   Email:{" "}
                   <span className="font-semibold text-navy-950">
-                    legal@hampistays.com
+                    stay@hampistays.com
                   </span>
                 </p>
                 <p>
