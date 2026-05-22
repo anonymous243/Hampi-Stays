@@ -1,16 +1,16 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
 async function check() {
-  console.log('Connecting to:', process.env.DATABASE_URL?.substring(0, 30) + '...');
   try {
-    const count = await prisma.user.count();
-    const admin = await prisma.user.findUnique({ where: { email: 'admin@hampistays.com' } });
-    console.log(`Cloud DB User Count: ${count}`);
-    console.log(`Admin User Found: ${!!admin}`);
+    const tables = await prisma.$queryRawUnsafe(
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`
+    );
+    console.log('Tables in database:', tables);
   } catch (err) {
-    console.error('Error checking cloud DB:', err);
+    console.error('Error querying tables:', err);
   } finally {
     await prisma.$disconnect();
   }

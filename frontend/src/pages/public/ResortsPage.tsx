@@ -24,6 +24,7 @@ const DEFAULT_FILTERS: FilterState = {
   amenities: [],
   types: [],
   minRating: 0,
+  categories: [],
 };
 
 export function ResortsPage() {
@@ -102,9 +103,9 @@ export function ResortsPage() {
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                   Filters
-                  {(filters.amenities.length + filters.types.length + (filters.minRating > 0 ? 1 : 0)) > 0 && (
+                  {(filters.amenities.length + filters.types.length + (filters.categories?.length || 0) + (filters.minRating > 0 ? 1 : 0)) > 0 && (
                     <span className="bg-gold-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                      {filters.amenities.length + filters.types.length + (filters.minRating > 0 ? 1 : 0)}
+                      {filters.amenities.length + filters.types.length + (filters.categories?.length || 0) + (filters.minRating > 0 ? 1 : 0)}
                     </span>
                   )}
                 </button>

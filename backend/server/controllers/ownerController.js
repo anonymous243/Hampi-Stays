@@ -36,7 +36,12 @@ export const getOwnerResorts = async (req, res, next) => {
       return res.json([]);
     }
 
-    res.json(owner.resorts);
+    const resortsWithFallback = owner.resorts.map(r => ({
+      ...r,
+      category: r.categories[0] || null
+    }));
+
+    res.json(resortsWithFallback);
   } catch (error) {
     next(error);
   }

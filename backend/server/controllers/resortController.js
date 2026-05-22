@@ -8,6 +8,23 @@ export const getAllResorts = async (req, res, next) => {
       minRating, sort, search 
     } = req.query;
 
+    let categoriesQuery = [];
+    if (category) {
+      if (Array.isArray(category)) {
+        categoriesQuery = category;
+      } else if (typeof category === 'string') {
+        if (category.startsWith('[') && category.endsWith(']')) {
+          try {
+            categoriesQuery = JSON.parse(category);
+          } catch (e) {
+            categoriesQuery = category.split(',').map(c => c.trim()).filter(Boolean);
+          }
+        } else {
+          categoriesQuery = category.split(',').map(c => c.trim()).filter(Boolean);
+        }
+      }
+    }
+
     const where = {
       status: 'APPROVED',
       ...(minPrice || maxPrice ? {
@@ -17,7 +34,11 @@ export const getAllResorts = async (req, res, next) => {
         }
       } : {}),
       ...(type ? { type } : {}),
-      ...(category ? { category } : {}),
+      ...(categoriesQuery.length > 0 ? {
+        categories: {
+          hasEvery: categoriesQuery
+        }
+      } : {}),
       ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {}),
       ...(search ? {
         OR: [
@@ -50,7 +71,7 @@ export const getAllResorts = async (req, res, next) => {
         rating: true,
         reviewCount: true,
         pricePerNight: true,
-        category: true,
+        categories: true,
         isVerified: true,
         isFeatured: true,
       }
@@ -59,6 +80,7 @@ export const getAllResorts = async (req, res, next) => {
     // Post-process to only send the first image to save bandwidth
     const optimizedResorts = resorts.map(r => ({
       ...r,
+      category: r.categories[0] || null, // fallback
       images: r.images.slice(0, 1) // Only send cover image for listing
     }));
 
@@ -84,7 +106,14 @@ export const getResortBySlug = async (req, res, next) => {
       }
     });
     if (!resort) return res.status(404).json({ error: 'Resort not found' });
-    res.json(resort);
+    
+    // Add legacy fallback for category
+    const resortWithFallback = {
+      ...resort,
+      category: resort.categories[0] || null
+    };
+
+    res.json(resortWithFallback);
   } catch (error) {
     next(error);
   }
@@ -92,7 +121,7 @@ export const getResortBySlug = async (req, res, next) => {
 
 export const createResort = async (req, res, next) => {
   try {
-    const { name, tagline, description, type, area, price, amenities, category, roomTypes, images, mealPackages, houseRules, documents } = req.body;
+    const { name, tagline, description, type, area, price, amenities, category, categories, roomTypes, images, mealPackages, houseRules, documents } = req.body;
     const ownerId = req.user.userId; // Secure: get from token
     
     const owner = await prisma.resortOwner.findUnique({ where: { userId: ownerId } });
@@ -103,7 +132,7 @@ export const createResort = async (req, res, next) => {
     const resort = await prisma.resort.create({
       data: {
         name, slug, tagline, description, type: type || 'luxury',
-        category: category || 'Heritage',
+        categories: categories || (category ? [category] : []),
         locationArea: area,
         locationLat: 15.3350,
         locationLng: 76.4600,
@@ -148,12 +177,13 @@ export const getFeaturedResorts = async (req, res, next) => {
         images: true,
         rating: true,
         pricePerNight: true,
-        category: true
+        categories: true
       }
     });
     
     const optimizedResorts = resorts.map(r => ({
       ...r,
+      category: r.categories[0] || null, // fallback
       images: r.images.slice(0, 1)
     }));
 

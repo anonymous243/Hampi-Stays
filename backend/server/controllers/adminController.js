@@ -76,10 +76,55 @@ export const getPendingResorts = async (req, res, next) => {
   try {
     const resorts = await prisma.resort.findMany({
       where: { status: 'PENDING' },
-      include: { owner: { include: { user: { select: { id: true, name: true, email: true, avatar: true, phone: true, createdAt: true } } } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        description: true,
+        type: true,
+        locationArea: true,
+        locationLat: true,
+        locationLng: true,
+        images: true,
+        amenities: true,
+        rating: true,
+        reviewCount: true,
+        pricePerNight: true,
+        isFeatured: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        ownerId: true,
+        categories: true,
+        houseRules: true,
+        mealPackages: true,
+        status: true,
+        commissionRate: true,
+        owner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                phone: true,
+                createdAt: true
+              }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(resorts);
+
+    const mappedResorts = resorts.map(r => ({
+      ...r,
+      category: r.categories[0] || null
+    }));
+
+    res.json(mappedResorts);
   } catch (error) {
     next(error);
   }
@@ -89,10 +134,55 @@ export const getActiveResorts = async (req, res, next) => {
   try {
     const resorts = await prisma.resort.findMany({
       where: { status: 'APPROVED' },
-      include: { owner: { include: { user: { select: { id: true, name: true, email: true, avatar: true, phone: true, createdAt: true } } } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        description: true,
+        type: true,
+        locationArea: true,
+        locationLat: true,
+        locationLng: true,
+        images: true,
+        amenities: true,
+        rating: true,
+        reviewCount: true,
+        pricePerNight: true,
+        isFeatured: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        ownerId: true,
+        categories: true,
+        houseRules: true,
+        mealPackages: true,
+        status: true,
+        commissionRate: true,
+        owner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                phone: true,
+                createdAt: true
+              }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(resorts);
+
+    const mappedResorts = resorts.map(r => ({
+      ...r,
+      category: r.categories[0] || null
+    }));
+
+    res.json(mappedResorts);
   } catch (error) {
     next(error);
   }
@@ -101,7 +191,21 @@ export const getActiveResorts = async (req, res, next) => {
 export const getAllBookings = async (req, res, next) => {
   try {
     const bookings = await prisma.booking.findMany({
-      include: {
+      select: {
+        id: true,
+        checkIn: true,
+        checkOut: true,
+        guests: true,
+        totalPrice: true,
+        status: true,
+        specialRequests: true,
+        referenceNumber: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+        resortId: true,
+        roomId: true,
+        commissionRate: true,
         user: {
           select: {
             id: true,
@@ -113,7 +217,18 @@ export const getAllBookings = async (req, res, next) => {
             kycStatus: true
           }
         },
-        resort: true
+        resort: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });

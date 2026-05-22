@@ -70,6 +70,7 @@ async function main() {
       pricePerNight: 31000,
       isFeatured: true,
       isVerified: true,
+      categories: ["Heritage", "Boutique", "Temple View"],
       roomTypes: {
         create: [
           {
@@ -112,6 +113,7 @@ async function main() {
       pricePerNight: 9500,
       isFeatured: true,
       isVerified: true,
+      categories: ["Riverside", "Nature"],
       roomTypes: {
         create: [
           {
@@ -145,6 +147,7 @@ async function main() {
       pricePerNight: 7500,
       isFeatured: false,
       isVerified: true,
+      categories: ["Heritage", "Nature"],
       roomTypes: {
         create: [
           {
@@ -177,6 +180,7 @@ async function main() {
       pricePerNight: 3500,
       isFeatured: false,
       isVerified: true,
+      categories: ["Heritage"],
       roomTypes: {
         create: [
           {
@@ -265,7 +269,8 @@ async function main() {
       images: ["https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&q=80&w=2000"],
       amenities: ["River Access", "Campfire", "Shared Cafe", "Basic WiFi"],
       pricePerNight: 2500,
-      status: 'PENDING'
+      status: 'PENDING',
+      categories: ["Riverside", "Nature"]
     }
   ];
 

@@ -1096,7 +1096,7 @@ export function AdminDashboard() {
                 </td>
                 <td className="px-8 py-6">
                   <p className="text-sm font-bold text-navy-950">{booking.resort?.name}</p>
-                  <p className="text-xs text-navy-950/40">{booking.roomType?.name || "Standard Stay"}</p>
+                  <p className="text-xs text-navy-950/40">{booking.room?.name || booking.roomType?.name || "Standard Stay"}</p>
                 </td>
                 <td className="px-8 py-6">
                   <div className="text-xs">

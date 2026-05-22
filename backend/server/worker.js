@@ -804,7 +804,7 @@ app.get('/resorts/featured', async (c) => {
         images: true,
         rating: true,
         pricePerNight: true,
-        category: true,
+        categories: true,
         amenities: true
       },
       cacheStrategy: { swr: 300, ttl: 300 } // Edge cache for 5 mins
@@ -812,6 +812,7 @@ app.get('/resorts/featured', async (c) => {
 
     const optimizedResorts = resorts.map(r => ({
       ...r,
+      category: r.categories[0] || null,
       images: r.images.slice(0, 1)
     }));
 
@@ -827,6 +828,23 @@ app.get('/resorts', async (c) => {
   } = c.req.query();
 
   try {
+    let categoriesQuery = [];
+    if (category) {
+      if (Array.isArray(category)) {
+        categoriesQuery = category;
+      } else if (typeof category === 'string') {
+        if (category.startsWith('[') && category.endsWith(']')) {
+          try {
+            categoriesQuery = JSON.parse(category);
+          } catch (e) {
+            categoriesQuery = category.split(',').map(x => x.trim()).filter(Boolean);
+          }
+        } else {
+          categoriesQuery = category.split(',').map(x => x.trim()).filter(Boolean);
+        }
+      }
+    }
+
     const where = {
       status: 'APPROVED',
       ...(minPrice || maxPrice ? {
@@ -836,7 +854,11 @@ app.get('/resorts', async (c) => {
         }
       } : {}),
       ...(type ? { type } : {}),
-      ...(category ? { category } : {}),
+      ...(categoriesQuery.length > 0 ? {
+        categories: {
+          hasEvery: categoriesQuery
+        }
+      } : {}),
       ...(minRating ? { rating: { gte: parseFloat(minRating) } } : {}),
       ...(search ? {
         OR: [
@@ -869,7 +891,7 @@ app.get('/resorts', async (c) => {
         rating: true,
         reviewCount: true,
         pricePerNight: true,
-        category: true,
+        categories: true,
         isVerified: true,
         isFeatured: true,
       },
@@ -878,6 +900,7 @@ app.get('/resorts', async (c) => {
 
     const optimizedResorts = resorts.map(r => ({
       ...r,
+      category: r.categories[0] || null,
       images: r.images.slice(0, 1)
     }));
 
@@ -965,7 +988,7 @@ app.post('/resorts', authMiddleware, async (c) => {
   const payload = c.get('user');
   
   try {
-    const { name, tagline, description, type, area, price, amenities, category, roomTypes, images, mealPackages, houseRules, documents } = data;
+    const { name, tagline, description, type, area, price, amenities, category, categories, roomTypes, images, mealPackages, houseRules, documents } = data;
     const ownerId = payload.userId;
     
     const owner = await prisma.resortOwner.findUnique({ where: { userId: ownerId } });
@@ -980,7 +1003,7 @@ app.post('/resorts', authMiddleware, async (c) => {
         tagline,
         description,
         type: type || 'luxury',
-        category: category || 'Heritage',
+        categories: categories || (category ? [category] : []),
         locationArea: area,
         locationLat: 15.3350,
         locationLng: 76.4600,
@@ -1174,10 +1197,55 @@ app.get('/admin/resorts/pending', authMiddleware, adminMiddleware, async (c) => 
   try {
     const resorts = await prisma.resort.findMany({
       where: { status: 'PENDING' },
-      include: { owner: { include: { user: true } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        description: true,
+        type: true,
+        locationArea: true,
+        locationLat: true,
+        locationLng: true,
+        images: true,
+        amenities: true,
+        rating: true,
+        reviewCount: true,
+        pricePerNight: true,
+        isFeatured: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        ownerId: true,
+        categories: true,
+        houseRules: true,
+        mealPackages: true,
+        status: true,
+        commissionRate: true,
+        owner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                phone: true,
+                createdAt: true
+              }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
-    return c.json(resorts);
+    
+    const mappedResorts = resorts.map(r => ({
+      ...r,
+      category: r.categories[0] || null
+    }));
+
+    return c.json(mappedResorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -1186,10 +1254,55 @@ app.get('/admin/resorts/active', authMiddleware, adminMiddleware, async (c) => {
   try {
     const resorts = await prisma.resort.findMany({
       where: { status: 'APPROVED' },
-      include: { owner: { include: { user: true } } },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        tagline: true,
+        description: true,
+        type: true,
+        locationArea: true,
+        locationLat: true,
+        locationLng: true,
+        images: true,
+        amenities: true,
+        rating: true,
+        reviewCount: true,
+        pricePerNight: true,
+        isFeatured: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        ownerId: true,
+        categories: true,
+        houseRules: true,
+        mealPackages: true,
+        status: true,
+        commissionRate: true,
+        owner: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                phone: true,
+                createdAt: true
+              }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
-    return c.json(resorts);
+    
+    const mappedResorts = resorts.map(r => ({
+      ...r,
+      category: r.categories[0] || null
+    }));
+
+    return c.json(mappedResorts);
   } catch (err) { return c.json({ error: err.message }, 500); }
 });
 
@@ -1228,7 +1341,42 @@ app.get('/admin/bookings/all', authMiddleware, adminMiddleware, async (c) => {
   const prisma = getPrisma(c.env);
   try {
     const bookings = await prisma.booking.findMany({
-      include: { user: true, resort: true },
+      select: {
+        id: true,
+        checkIn: true,
+        checkOut: true,
+        guests: true,
+        totalPrice: true,
+        status: true,
+        specialRequests: true,
+        referenceNumber: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+        resortId: true,
+        roomId: true,
+        commissionRate: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        },
+        resort: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        room: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
     return c.json(bookings);

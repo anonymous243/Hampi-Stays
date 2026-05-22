@@ -76,7 +76,7 @@ model Resort {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   ownerId        String
-  category       String?
+  categories     String[]       @default([])
   houseRules     String[]
   mealPackages   Json?
   verificationDocs Json?
@@ -95,7 +95,6 @@ model Resort {
   @@index([pricePerNight])
   @@index([rating])
   @@index([type])
-  @@index([category])
   @@index([isFeatured])
   @@map("resorts")
 }

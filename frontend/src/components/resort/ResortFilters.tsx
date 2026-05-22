@@ -85,6 +85,34 @@ export function ResortFilters({ filters, onChange, maxPrice, isOpen, onClose }: 
           </div>
         </section>
 
+        {/* Resort Categories */}
+        <section>
+          <h4 className="text-xs font-bold text-navy-950/50 uppercase tracking-widest mb-4">
+            Resort Categories
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {["Heritage", "Nature", "Riverside", "Temple View", "Boutique"].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => {
+                  const categories = (filters.categories || []).includes(cat)
+                    ? (filters.categories || []).filter((c) => c !== cat)
+                    : [...(filters.categories || []), cat];
+                  onChange({ ...filters, categories });
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all border ${
+                  (filters.categories || []).includes(cat)
+                    ? "bg-navy-950 text-white border-navy-950 shadow-md"
+                    : "bg-white text-navy-950/60 border-sand-200 hover:border-gold-400 hover:text-navy-950"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Amenities */}
         <section>
           <h4 className="text-xs font-bold text-navy-950/50 uppercase tracking-widest mb-4">
@@ -147,7 +175,7 @@ export function ResortFilters({ filters, onChange, maxPrice, isOpen, onClose }: 
       {/* Footer Actions */}
       <div className="mt-8 pt-8 border-t border-sand-100 flex-shrink-0">
         <button
-          onClick={() => onChange({ ...filters, amenities: [], types: [], minRating: 0, maxPrice: maxPrice || 60000 })}
+          onClick={() => onChange({ ...filters, amenities: [], types: [], categories: [], minRating: 0, maxPrice: maxPrice || 60000 })}
           className="w-full py-4 text-sm font-bold text-navy-950/40 hover:text-red-600 transition-colors uppercase tracking-widest"
         >
           Reset All Filters

@@ -22,14 +22,28 @@ export function ResortSetupPage() {
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("hampi-resort-setup-draft");
-    return saved ? JSON.parse(saved) : {
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && !parsed.categories && parsed.category) {
+          parsed.categories = [parsed.category];
+        }
+        if (parsed && !parsed.categories) {
+          parsed.categories = ["Heritage"];
+        }
+        return parsed;
+      } catch (e) {
+        // Fallback below
+      }
+    }
+    return {
       name: "",
       tagline: "",
       description: "",
       area: "",
       price: "",
       type: "luxury",
-      category: "Heritage",
+      categories: ["Heritage"],
       amenities: [] as string[],
       houseRules: [] as string[],
       mealPackages: [] as { name: string, price: number, description: string }[],
@@ -238,15 +252,33 @@ export function ResortSetupPage() {
                         placeholder="Share the history and experience of your property..." value={formData.description} onChange={e => setFormData(p => ({...p, description: e.target.value}))} />
                     </div>
                     <div className="space-y-4">
-                      <label className="text-xs font-bold text-navy-800/40 uppercase tracking-widest ml-1">Resort Category</label>
+                      <label className="text-xs font-bold text-navy-800/40 uppercase tracking-widest ml-1">Resort Categories (Select one or more)</label>
                       <div className="flex flex-wrap gap-3">
-                        {categories.map(c => (
-                          <button key={c} onClick={() => setFormData(p => ({...p, category: c}))}
-                            className={cn("px-8 py-3 rounded-2xl border-2 font-bold transition-all",
-                              formData.category === c ? "border-gold-500 bg-gold-50 text-gold-700 shadow-sm" : "border-sand-100 text-navy-950/40 hover:border-gold-200")}>
-                            {c}
-                          </button>
-                        ))}
+                        {categories.map(c => {
+                          const isSelected = (formData.categories || []).includes(c);
+                          return (
+                            <button 
+                              key={c}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => {
+                                  const current = prev.categories || [];
+                                  const updated = current.includes(c)
+                                    ? current.filter(x => x !== c)
+                                    : [...current, c];
+                                  return {
+                                    ...prev,
+                                    categories: updated.length > 0 ? updated : [c]
+                                  };
+                                });
+                              }}
+                              className={cn("px-8 py-3 rounded-2xl border-2 font-bold transition-all",
+                                isSelected ? "border-gold-500 bg-gold-50 text-gold-700 shadow-sm" : "border-sand-100 text-navy-950/40 hover:border-gold-200")}
+                            >
+                              {c}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

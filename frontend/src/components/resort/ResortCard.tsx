@@ -114,15 +114,20 @@ export const ResortCard = memo(function ResortCard({
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
 
           {/* Badges */}
-          <div className="absolute top-4 left-4 flex flex-col gap-2" style={{ transform: "translateZ(50px)" }}>
+          <div className="absolute top-4 left-4 flex flex-wrap gap-1.5 max-w-[80%]" style={{ transform: "translateZ(50px)" }}>
             {resort.isFeatured && (
-              <span className="bg-gold-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm">
+              <span className="bg-gold-600 text-white px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm">
                 Featured
               </span>
             )}
-            <span className={cn("px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider", TYPE_COLORS[resort.type])}>
+            <span className={cn("px-3 py-1 rounded-full text-[9px] font-bold border uppercase tracking-wider", TYPE_COLORS[resort.type])}>
               {TYPE_LABELS[resort.type]}
             </span>
+            {(Array.isArray(resort.categories) ? resort.categories : (resort.category ? [resort.category] : [])).map((cat) => (
+              <span key={cat} className="bg-navy-950/85 text-gold-400 border border-gold-500/30 px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-xs">
+                {cat}
+              </span>
+            ))}
           </div>
 
           {/* Favourite */}

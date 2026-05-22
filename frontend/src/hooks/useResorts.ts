@@ -17,6 +17,9 @@ export function useResorts({ search, filters, sort = "popularity" }: UseResortsO
   if (filters?.maxPrice) queryParams.append('maxPrice', filters.maxPrice.toString());
   if (filters?.types?.length) queryParams.append('type', filters.types[0]); // Backend handles one type for now
   if (filters?.minRating) queryParams.append('minRating', filters.minRating.toString());
+  if (filters?.categories?.length) {
+    queryParams.append('category', filters.categories.join(','));
+  }
   if (sort) queryParams.append('sort', sort);
   if (search?.location) queryParams.append('search', search.location);
 

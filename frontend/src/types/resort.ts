@@ -120,6 +120,7 @@ export interface FilterState {
   amenities: Amenity[];
   types: ResortType[];
   minRating: number;
+  categories: string[];
 }
 
 export type SortOption = "rating" | "price_asc" | "price_desc" | "newest" | "popularity";
