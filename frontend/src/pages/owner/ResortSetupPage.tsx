@@ -27,13 +27,27 @@ export function ResortSetupPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && !parsed.categories && parsed.category) {
-          parsed.categories = [parsed.category];
+        if (parsed) {
+          // Normalize categories to always be a clean array of strings
+          if (!Array.isArray(parsed.categories)) {
+            if (typeof parsed.categories === "string" && parsed.categories) {
+              parsed.categories = [parsed.categories];
+            } else if (parsed.category && typeof parsed.category === "string") {
+              parsed.categories = [parsed.category];
+            } else {
+              parsed.categories = ["Heritage"];
+            }
+          }
+          // Filter out any single-character garbage that could have been saved from previous string-spread bugs
+          parsed.categories = parsed.categories.filter((cat: any) => typeof cat === 'string' && cat.length > 1);
+          if (parsed.categories.length === 0) {
+            parsed.categories = ["Heritage"];
+          }
+          if (parsed.category) {
+            delete parsed.category;
+          }
+          return parsed;
         }
-        if (parsed && !parsed.categories) {
-          parsed.categories = ["Heritage"];
-        }
-        return parsed;
       } catch (e) {
         // Fallback below
       }
@@ -88,15 +102,15 @@ export function ResortSetupPage() {
       return;
     }
 
-    const currentCats = formData.categories || [];
-    if (currentCats.some(c => c.toLowerCase() === formatted.toLowerCase())) {
+    const currentCats = Array.isArray(formData.categories) ? formData.categories : [];
+    if (currentCats.some(c => typeof c === 'string' && c.toLowerCase() === formatted.toLowerCase())) {
       toast.error("This category already exists");
       return;
     }
 
     setFormData(prev => ({
       ...prev,
-      categories: [...(prev.categories || []), formatted]
+      categories: [...(Array.isArray(prev.categories) ? prev.categories : []), formatted]
     }));
     setCustomCategoryText("");
   };
@@ -285,14 +299,14 @@ export function ResortSetupPage() {
                       <label className="text-xs font-bold text-navy-800/40 uppercase tracking-widest ml-1">Resort Categories (Select one or more)</label>
                       <div className="flex flex-wrap gap-3">
                         {categories.map(c => {
-                          const isSelected = (formData.categories || []).includes(c);
+                          const isSelected = (Array.isArray(formData.categories) ? formData.categories : []).includes(c);
                           return (
                             <button 
                               key={c}
                               type="button"
                               onClick={() => {
                                 setFormData(prev => {
-                                  const current = prev.categories || [];
+                                  const current = Array.isArray(prev.categories) ? prev.categories : [];
                                   const updated = current.includes(c)
                                     ? current.filter(x => x !== c)
                                     : [...current, c];
@@ -311,7 +325,7 @@ export function ResortSetupPage() {
                         })}
                         {/* Custom categories */}
                         <AnimatePresence>
-                          {(formData.categories || [])
+                          {(Array.isArray(formData.categories) ? formData.categories : [])
                             .filter(c => !categories.includes(c))
                             .map(c => (
                               <motion.div
@@ -327,7 +341,7 @@ export function ResortSetupPage() {
                                   onClick={() => {
                                     setFormData(prev => ({
                                       ...prev,
-                                      categories: (prev.categories || []).filter(x => x !== c)
+                                      categories: (Array.isArray(prev.categories) ? prev.categories : []).filter(x => x !== c)
                                     }));
                                   }}
                                   className="text-gold-500 hover:text-gold-800 transition-colors focus:outline-none ml-1"
