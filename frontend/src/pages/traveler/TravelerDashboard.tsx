@@ -35,7 +35,7 @@ export function TravelerDashboard() {
       if (!user) return;
       try {
         const [bookingsData, wishlistData] = await Promise.all([
-          apiClient.get<Booking[]>(`/users/${user.id}/bookings`),
+          apiClient.get<Booking[]>(`/users/bookings`),
           apiClient.get<Resort[]>(`/users/${user.id}/wishlist`)
         ]);
 

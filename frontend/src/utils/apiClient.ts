@@ -76,8 +76,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
 
   // 5. Handle HTTP Errors
   if (!response.ok) {
-    // If the token is invalid or expired, notify the app
-    if (response.status === 401 || response.status === 403) {
+    // If the token is invalid or expired, notify the app (except for auth requests)
+    if ((response.status === 401 || response.status === 403) && !url.includes('/auth/')) {
       window.dispatchEvent(new CustomEvent('hampi-unauthorized'));
     }
     
